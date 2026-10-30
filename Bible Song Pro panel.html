@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Bible Song Pro - Control Panel</title>
-  <link rel="stylesheet" href="css/panel/00-panel-base.css?v=2.2.6">
+  <link rel="stylesheet" href="css/panel/00-panel-base.css?v=2.2.7">
   <link rel="stylesheet" href="css/panel/20-annotate-tools.css">
   <link rel="stylesheet" href="css/panel/21-ai-helper-toolbar.css">
   <link rel="stylesheet" href="css/panel/30-media-workspace.css">
@@ -304,109 +304,30 @@
     }
 
     /* ===== COMPACT OBS DOCK & ULTRA-RESPONSIVE FIX ===== */
-    /* 1. Header Toolbar: KEEP VISIBLE, SLEEK & COMPACT (Restore Font Size & Settings) */
-    .header-toolbar,
+    /* 1. In Setlist mode, hide header-toolbar because controls are integrated into ew-preview-topbar */
     body[data-sidebar-tab="schedule"] .header-toolbar,
-    body[data-sidebar-tab="schedule"] #main > .header-toolbar,
-    body.obs-isolated .header-toolbar {
-      display: flex !important;
-      align-items: center !important;
-      justify-content: space-between !important;
-      gap: 4px !important;
-      padding: 3px 6px !important;
-      min-height: 30px !important;
-      height: auto !important;
-      flex-wrap: wrap !important;
-      background: rgba(15, 23, 42, 0.75) !important;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
-      flex-shrink: 0 !important;
-    }
-
-    /* Hide non-essential buttons in compact dock mode / setlist mode to avoid wrapping */
-    body[data-sidebar-tab="schedule"] .header-toolbar > .add-btn,
-    body[data-sidebar-tab="schedule"] .header-toolbar > #media-toolbar-tools,
-    body[data-sidebar-tab="schedule"] .header-toolbar > #btn-ew-import,
-    body[data-sidebar-tab="schedule"] .header-toolbar > #btn-import,
-    body[data-sidebar-tab="schedule"] .header-toolbar > #btn-preset,
-    body[data-sidebar-tab="schedule"] .header-toolbar > .annotate-wrap,
-    body[data-sidebar-tab="schedule"] .header-toolbar > #btn-ai-toolbar,
-    body[data-sidebar-tab="schedule"] #mode-text,
-    body[data-sidebar-tab="schedule"] #mode-btn,
-    body.obs-isolated .header-toolbar > .add-btn,
-    body.obs-isolated .header-toolbar > #media-toolbar-tools,
-    body.obs-isolated .header-toolbar > #btn-ew-import,
-    body.obs-isolated .header-toolbar > #btn-import,
-    body.obs-isolated .header-toolbar > #btn-preset,
-    body.obs-isolated .header-toolbar > .annotate-wrap,
-    body.obs-isolated .header-toolbar > #btn-ai-toolbar,
-    body.obs-isolated #mode-text,
-    body.obs-isolated #mode-btn {
+    body[data-sidebar-tab="schedule"] #main > .header-toolbar {
       display: none !important;
     }
 
-    /* Keep mode-edit (Edit Teks), font size control (- 30pt +), and settings gear visible & compact */
-    #mode-edit,
-    body[data-sidebar-tab="schedule"] #mode-edit,
-    body.obs-isolated #mode-edit {
-      display: inline-flex !important;
-      align-items: center !important;
-      gap: 3px !important;
-      font-size: 11px !important;
-      font-weight: 700 !important;
-      padding: 2px 7px !important;
-      height: 25px !important;
-      border-radius: 5px !important;
+    /* 2. Unconditionally hide redundant bottom page-nav-bar in control panel */
+    #page-nav-bar,
+    .page-nav-tool-left,
+    .page-nav-primary {
+      display: none !important;
     }
 
-    #workspace-font-size-control,
-    body[data-sidebar-tab="schedule"] #workspace-font-size-control,
-    body.obs-isolated #workspace-font-size-control {
-      display: inline-flex !important;
-      align-items: center !important;
-      height: 25px !important;
-      border-radius: 5px !important;
-      background: rgba(255, 255, 255, 0.08) !important;
-      border: 1px solid rgba(255, 255, 255, 0.15) !important;
-      overflow: hidden !important;
-    }
-
-    #workspace-font-size-control button,
-    body[data-sidebar-tab="schedule"] #workspace-font-size-control button,
-    body.obs-isolated #workspace-font-size-control button {
-      height: 25px !important;
-      line-height: 25px !important;
-      padding: 0 5px !important;
-      font-size: 11px !important;
-    }
-
-    #workspace-font-size-control .workspace-font-size-value {
-      min-width: 32px !important;
-      font-size: 11px !important;
-      font-weight: 700 !important;
-    }
-
-    #btn-settings,
-    body[data-sidebar-tab="schedule"] #btn-settings,
-    body.obs-isolated #btn-settings {
-      display: inline-flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-      width: 25px !important;
-      height: 25px !important;
-      min-width: 25px !important;
-      padding: 0 !important;
-    }
-
-    /* 2. Top Bar Header: scrollable and compact on narrow screens */
+    /* 3. Top bar header: compact single line */
     #app-topbar {
       display: flex !important;
       flex-wrap: nowrap !important;
       overflow-x: auto !important;
       overflow-y: hidden !important;
       scrollbar-width: none !important;
-      height: 32px !important;
-      min-height: 32px !important;
+      height: 30px !important;
+      min-height: 30px !important;
       padding: 2px 6px !important;
+      flex-shrink: 0 !important;
     }
 
     #app-topbar::-webkit-scrollbar {
@@ -421,7 +342,7 @@
     #app-topbar .btn {
       padding: 2px 6px !important;
       font-size: 10px !important;
-      height: 24px !important;
+      height: 22px !important;
       white-space: nowrap !important;
       flex-shrink: 0 !important;
     }
@@ -431,47 +352,48 @@
         display: none !important;
       }
       #app-topbar .btn {
-        padding: 3px 6px !important;
-        min-width: 28px !important;
+        padding: 2px 5px !important;
+        min-width: 24px !important;
       }
     }
 
-    /* 3. Sidebar Tabs: 4 tabs fit cleanly without ugly text clipping */
+    /* 4. Sidebar tabs: 4 tabs fit cleanly */
     .sidebar-tabs {
       display: flex !important;
       width: 100% !important;
       overflow: hidden !important;
+      flex-shrink: 0 !important;
     }
 
     .sidebar-tabs .tab {
       flex: 1 1 0 !important;
       min-width: 0 !important;
-      padding: 6px 2px !important;
+      padding: 6px 1px !important;
       font-size: 9.5px !important;
-      letter-spacing: 0 !important;
+      letter-spacing: -0.2px !important;
       text-align: center !important;
       white-space: nowrap !important;
       overflow: hidden !important;
-      text-overflow: ellipsis !important;
+      text-overflow: clip !important;
     }
 
-    /* 4. Sidebar Width: Flexible and compact for narrow docks */
-    #sidebar,
-    body.obs-isolated #sidebar {
-      width: 135px !important;
-      min-width: 105px !important;
+    /* 5. Sidebar Width */
+    #sidebar {
+      width: 140px !important;
+      min-width: 100px !important;
       max-width: 200px !important;
     }
 
-    /* 5. Live Controls & Nav Row: ZERO CUT-OFF, ALWAYS VISIBLE ARROWS & GEAR */
+    /* 6. Live Controls: Single clean 30px row */
     .live-controls {
       padding: 4px 6px !important;
       background: var(--material-thick, rgba(15, 23, 42, 0.95)) !important;
+      flex-shrink: 0 !important;
     }
 
     .nav-row {
       display: flex !important;
-      flex-wrap: wrap !important;
+      flex-wrap: nowrap !important;
       align-items: center !important;
       gap: 4px !important;
       width: 100% !important;
@@ -486,7 +408,7 @@
     }
 
     #btn-project-live {
-      min-width: 60px !important;
+      min-width: 65px !important;
       flex: 1 1 auto !important;
       padding: 0 8px !important;
       white-space: nowrap !important;
@@ -536,80 +458,127 @@
       border-color: rgba(255, 255, 255, 0.4) !important;
     }
 
-    /* Search container in nav-row: moves to row 2 when narrow, never pushes buttons off screen */
-    .nav-row > div:has(#nav-mirror-search) {
-      order: 2 !important;
-      width: 100% !important;
-      flex: 1 1 100% !important;
-      margin-top: 2px !important;
+    /* In compact dock, hide duplicate search bar to save vertical space */
+    @media (max-width: 650px), (max-height: 550px) {
+      .nav-row > div:has(#nav-mirror-search) {
+        display: none !important;
+      }
     }
 
-    #nav-mirror-search {
-      width: 100% !important;
-      height: 26px !important;
-      padding: 4px 50px 4px 8px !important;
-      font-size: 11px !important;
-    }
-
-    /* 6. Main Panel Stacks (Lines, Mode, Background): Collapsible & Compact */
     .main-panel-stacks.stacks-collapsed {
       display: none !important;
     }
 
-    .main-panel-stacks {
-      padding-top: 6px !important;
-      margin-top: 4px !important;
-      gap: 6px !important;
+    /* 7. Slide Cards Grid: Maximum vertical room, prominent slide text */
+    #focused-main-panel {
+      flex: 1 1 auto !important;
+      min-height: 0 !important;
+      display: flex !important;
+      flex-direction: column !important;
+      overflow: hidden !important;
     }
 
-    /* 7. Slide Cards Grid: Responsive & Clean in narrow dock */
+    .focused-main-shell {
+      display: flex !important;
+      flex-direction: column !important;
+      height: 100% !important;
+      min-height: 0 !important;
+      flex: 1 1 auto !important;
+      overflow: hidden !important;
+    }
+
     .ew-slide-grid {
-      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)) !important;
+      display: grid !important;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)) !important;
       gap: 6px !important;
       padding: 6px !important;
+      flex: 1 1 auto !important;
+      min-height: 0 !important;
+      overflow-y: auto !important;
+      align-content: stretch !important;
     }
 
     .ew-slide-card {
-      min-height: 80px !important;
-      border-radius: 6px !important;
+      display: flex !important;
+      flex-direction: column !important;
+      background: #0f172a !important;
+      border: 1px solid rgba(255, 255, 255, 0.16) !important;
+      border-radius: 8px !important;
+      overflow: hidden !important;
+      min-height: 110px !important;
+      flex: 1 1 auto !important;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+    }
+
+    .ew-slide-card.live {
+      border: 2px solid #10b981 !important;
+      box-shadow: 0 0 12px rgba(16, 185, 129, 0.5) !important;
+    }
+
+    .ew-slide-card.selected {
+      border: 2px solid #3b82f6 !important;
+      box-shadow: 0 0 12px rgba(59, 130, 246, 0.4) !important;
     }
 
     .ew-slide-header {
-      padding: 3px 6px !important;
-      font-size: 9.5px !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      padding: 4px 8px !important;
+      background: rgba(255, 255, 255, 0.05) !important;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+      font-size: 10px !important;
+      font-weight: 700 !important;
+      color: #94a3b8 !important;
+      flex-shrink: 0 !important;
     }
 
     .ew-slide-tag {
-      max-width: 100px !important;
+      color: #e2e8f0 !important;
+      font-weight: 700 !important;
+      max-width: 110px !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+      white-space: nowrap !important;
     }
 
     .ew-slide-body {
-      padding: 5px 6px !important;
+      flex: 1 1 auto !important;
+      min-height: 50px !important;
+      padding: 8px !important;
+      overflow-y: auto !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      text-align: center !important;
     }
 
     .ew-slide-text {
-      font-size: 10.5px !important;
-      line-height: 1.3 !important;
+      font-size: 13px !important;
+      font-weight: 700 !important;
+      line-height: 1.35 !important;
+      color: #ffffff !important;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8) !important;
+      word-break: break-word !important;
+      white-space: normal !important;
     }
 
     .ew-slide-footer {
       padding: 3px 6px !important;
+      background: rgba(0, 0, 0, 0.3) !important;
+      border-top: 1px solid rgba(255, 255, 255, 0.05) !important;
+      flex-shrink: 0 !important;
     }
 
     .ew-slide-btn-live {
-      padding: 2px 6px !important;
-      font-size: 9.5px !important;
-      height: 22px !important;
-    }
-
-    /* 8. Hide bottom page-nav bar in OBS dock */
-    body.obs-isolated #page-nav-bar,
-    body.obs-isolated .page-nav-tool-left,
-    body.obs-isolated .page-nav-primary,
-    @media (max-width: 650px) {
-      #page-nav-bar {
-        display: none !important;
-      }
+      width: 100% !important;
+      height: 24px !important;
+      padding: 0 6px !important;
+      font-size: 10px !important;
+      font-weight: 700 !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
     }
 
 
@@ -4517,12 +4486,12 @@
   <script src="lib/sql-wasm.js"></script>
   <script src="lib/sql-wasm-binary.js"></script>
   <script src="data/easyworship_songs_1410.js"></script>
-  <script src="js/panel/easyworship-import.js?v=2.2.6"></script>
+  <script src="js/panel/easyworship-import.js?v=2.2.7"></script>
   <script src="js/panel/state-and-storage.js"></script>
   <script src="js/panel/panel-app-core.js"></script>
   <script src="js/panel/reference-localization-theme.js"></script>
   <script src="js/panel/vmix-and-translation.js"></script>
-  <script src="js/panel/songs-and-bible.js?v=2.2.6"></script>
+  <script src="js/panel/songs-and-bible.js?v=2.2.7"></script>
   <script src="js/panel/render-and-selection.js"></script>
   <script src="js/panel/media-and-background.js"></script>
   <script src="js/panel/output-and-streaming.js"></script>
@@ -4532,7 +4501,7 @@
   <script src="js/panel/source-runtime-and-promixer.js"></script>
   <script src="js/panel/program-display-and-transform.js"></script>
   <script src="js/panel/recording-and-livestream-tools.js"></script>
-  <script src="js/panel/workspace-and-editor-tools.js?v=2.2.6"></script>
+  <script src="js/panel/workspace-and-editor-tools.js?v=2.2.7"></script>
   <script src="js/panel/app-commands-and-shortcuts.js"></script>
   <script src="js/panel/settings-and-controls.js"></script>
   <script src="js/panel/sidebar-and-workspace.js"></script>

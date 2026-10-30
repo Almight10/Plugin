@@ -537,6 +537,8 @@
       valueBtn.title = `${label}. Click to increase.`;
       wrap.title = label;
       wrap.setAttribute('aria-label', label);
+      const ewVal = document.getElementById('ew-font-size-val');
+      if (ewVal) ewVal.textContent = `${value}pt`;
     }
 
     function setWorkspaceFontSizeValue(value) {
@@ -2499,11 +2501,21 @@
 
       panel.innerHTML = `
         <div class="focused-main-shell">
-          <div class="ew-preview-topbar">
-            <div style="display:flex;align-items:center;gap:10px;min-width:0;flex:1 1 auto;">
-              <span style="background:rgba(108,99,255,0.25);color:#a5b4fc;border:1px solid rgba(108,99,255,0.45);font-size:10px;font-weight:700;padding:3px 8px;border-radius:5px;white-space:nowrap;">📋 SETLIST PREVIEW</span>
-              <div style="font-size:14px;font-weight:700;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${itemTitle}">${itemTitle}</div>
-              <span style="font-size:11px;color:var(--text-secondary);white-space:nowrap;">(${slides.length} Slide • Item ${activeIdx + 1}/${entries.length})</span>
+          <div class="ew-preview-topbar" style="display:flex;align-items:center;justify-content:space-between;gap:6px;padding:3px 8px;min-height:28px;background:rgba(15,23,42,0.85);border-bottom:1px solid rgba(255,255,255,0.08);flex-shrink:0;">
+            <div style="display:flex;align-items:center;gap:6px;min-width:0;flex:1 1 auto;overflow:hidden;">
+              <span style="background:rgba(108,99,255,0.25);color:#a5b4fc;border:1px solid rgba(108,99,255,0.45);font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;white-space:nowrap;">📋 ${activeIdx + 1}/${entries.length}</span>
+              <div style="font-size:11.5px;font-weight:700;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${itemTitle}">${itemTitle}</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
+              <div class="workspace-font-size-control" style="display:inline-flex;align-items:center;height:24px;border-radius:4px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);overflow:hidden;" title="Ukuran Font Teks / Lirik">
+                <button class="workspace-font-size-step" type="button" onclick="stepWorkspaceFontSize(-1)" style="height:24px;line-height:24px;padding:0 5px;background:none;border:none;color:#fff;cursor:pointer;font-size:11px;">-</button>
+                <button class="workspace-font-size-value" id="ew-font-size-val" type="button" onclick="stepWorkspaceFontSize(1)" style="height:24px;line-height:24px;padding:0 4px;background:none;border:none;color:#38bdf8;cursor:pointer;font-size:11px;font-weight:700;min-width:32px;">${Math.round(typeof getWorkspaceFontSizeValue === 'function' ? getWorkspaceFontSizeValue() : 40)}pt</button>
+                <button class="workspace-font-size-step" type="button" onclick="stepWorkspaceFontSize(1)" style="height:24px;line-height:24px;padding:0 5px;background:none;border:none;color:#fff;cursor:pointer;font-size:11px;">+</button>
+              </div>
+              <button class="btn" type="button" onclick="openTextEditModal()" title="Edit Teks / Lirik" style="display:inline-flex;align-items:center;gap:2px;height:24px;padding:0 6px;font-size:11px;background:rgba(245,158,11,0.25);border:1px solid rgba(245,158,11,0.6);color:#F59E0B;border-radius:4px;cursor:pointer;font-weight:700;">
+                <span>✏️</span>
+              </button>
+              <button class="btn" type="button" onclick="openModal('settingsModal')" title="Pengaturan (Settings)" style="display:inline-flex;align-items:center;justify-content:center;height:24px;width:24px;min-width:24px;padding:0;background:#334155;color:#fff;border-radius:4px;border:1px solid rgba(255,255,255,0.2);cursor:pointer;font-size:12px;">⚙</button>
             </div>
           </div>
           
