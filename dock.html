@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>BSP AI Dock</title>
+  <style>
+    :root {
+      --bg: rgba(11, 13, 18, 0.0);
+      --panel: #14181f;
+      --panel-2: #1b212c;
+      --border: #232a35;
+      --text: #e8ecf2;
+      --muted: #8a93a3;
+      --accent: #4f8cff;
+      --accent-hover: #6aa0ff;
+      --danger: #ef4f5b;
+      --success: #34d399;
+      --warning: #f5a623;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0; height: 100%; width: 100%;
+      background: var(--bg); color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+      font-size: 12px;
+      overflow: hidden;
+    }
+    /* The floating panel that can be dragged within the dock area. */
+    .panel {
+      position: absolute;
+      top: 12px; left: 12px;
+      width: 480px;
+      max-width: calc(100% - 24px);
+      max-height: calc(100% - 24px);
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.55), 0 4px 12px rgba(0,0,0,0.3);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transition: width 180ms ease, height 180ms ease, opacity 120ms ease;
+    }
+    .panel.hidden { display: none; }
+    .panel.collapsed {
+      width: 56px;
+      height: 56px;
+      border-radius: 28px;
+      cursor: grab;
+    }
+    .panel.collapsed > .body,
+    .panel.collapsed > .footer,
+    .panel.collapsed > .titlebar > .controls > .btn:not(.expand),
+    .panel.collapsed > .titlebar > .title,
+    .panel.collapsed > .titlebar > .status-pill {
+      display: none;
+    }
+    .panel.collapsed > .titlebar {
+      width: 100%; height: 100%;
+      padding: 0; border: none; background: transparent;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .panel.collapsed > .titlebar > .controls {
+      width: 100%; height: 100%;
+    }
+    .panel.collapsed > .titlebar > .controls > .btn.expand {
+      width: 100%; height: 100%; border-radius: 28px;
+      background: var(--accent); display: flex; align-items: center; justify-content: center;
+    }
+
+    .titlebar {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 10px;
+      background: var(--panel-2);
+      border-bottom: 1px solid var(--border);
+      cursor: grab;
+      user-select: none;
+    }
+    .titlebar:active { cursor: grabbing; }
+    .title { font-size: 12px; font-weight: 600; flex: 1; }
+    .status-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 2px 8px; border-radius: 999px;
+      background: rgba(255,255,255,0.05);
+      font-size: 10px; color: var(--muted);
+    }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: #555; }
+    .dot.on { background: var(--success); }
+    .dot.warn { background: var(--warning); }
+    .dot.err { background: var(--danger); }
+
+    .controls { display: flex; gap: 4px; }
+    .btn {
+      background: transparent; color: var(--text); border: 1px solid var(--border);
+      border-radius: 4px; padding: 4px 8px; font-size: 11px; font-family: inherit;
+      cursor: pointer; display: inline-flex; align-items: center; gap: 4px;
+    }
+    .btn:hover { background: rgba(255,255,255,0.06); }
+    .btn.primary { background: var(--accent); border-color: var(--accent); font-weight: 600; }
+    .btn.primary:hover { background: var(--accent-hover); }
+    .btn.danger { background: var(--danger); border-color: var(--danger); font-weight: 600; }
+    .btn.icon-only { padding: 4px 6px; }
+
+    .body {
+      flex: 1; min-height: 0;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      background: var(--border);
+    }
+    .col {
+      background: var(--panel);
+      display: flex; flex-direction: column;
+      min-height: 0;
+      min-width: 0;
+    }
+    .col-head {
+      padding: 6px 10px; font-size: 10px; text-transform: uppercase;
+      color: var(--muted); letter-spacing: 0.5px;
+      background: var(--panel-2);
+      border-bottom: 1px solid var(--border);
+    }
+    .col-body {
+      flex: 1; overflow-y: auto; padding: 8px 10px;
+      font-size: 12px; line-height: 1.5;
+    }
+    .transcript .entry { margin-bottom: 6px; color: var(--text); }
+    .transcript .entry.interim { color: var(--muted); font-style: italic; }
+    .transcript .ts { color: var(--muted); font-size: 10px; margin-right: 6px; }
+
+    .scripture-list { display: flex; flex-direction: column; gap: 6px; }
+    .scripture-card {
+      background: var(--panel-2); border: 1px solid var(--border);
+      border-radius: 6px; padding: 8px;
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    .scripture-card .ref { font-weight: 600; color: var(--accent); font-size: 13px; }
+    .scripture-card .src { color: var(--muted); font-size: 10px; }
+    .scripture-card .actions { display: flex; gap: 4px; margin-top: 4px; }
+    .scripture-card .actions .btn { flex: 1; padding: 4px; font-size: 10px; }
+
+    .empty {
+      color: var(--muted); font-size: 11px; padding: 8px 0;
+      text-align: center; font-style: italic;
+    }
+
+    .footer {
+      padding: 4px 10px;
+      background: var(--panel-2);
+      border-top: 1px solid var(--border);
+      color: var(--muted); font-size: 10px;
+      display: flex; gap: 10px;
+    }
+
+    .controls .btn.expand { padding: 0; border: none; background: var(--accent); }
+    .controls .btn.expand svg { width: 28px; height: 28px; color: white; }
+  </style>
+</head>
+<body>
+  <div class="panel" id="panel">
+    <div class="titlebar" id="titlebar">
+      <span class="title">BSP AI</span>
+      <span class="status-pill"><span class="dot" id="ws-dot"></span><span id="ws-label">Disconnected</span></span>
+      <div class="controls">
+        <button class="btn primary" id="toggle-btn">Start</button>
+        <button class="btn icon-only" id="collapse-btn" title="Collapse">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8h10"/></svg>
+        </button>
+        <button class="btn icon-only" id="close-btn" title="Hide">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3l10 10M13 3L3 13"/></svg>
+        </button>
+        <button class="btn expand" id="expand-btn" title="Expand">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 19V5M5 12h14"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="body">
+      <div class="col transcript">
+        <div class="col-head">Transcript</div>
+        <div class="col-body" id="transcript-body">
+          <div class="empty">Waiting for transcript…</div>
+        </div>
+      </div>
+      <div class="col">
+        <div class="col-head">Scripture</div>
+        <div class="col-body">
+          <div class="scripture-list" id="scripture-list">
+            <div class="empty">No verses detected yet</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <span id="engine-label">idle</span>
+      <span style="margin-left:auto" id="hint">Drag header to move • Click − to collapse</span>
+    </div>
+  </div>
+
+  <script src="./helper-app/relay.js"></script>
+  <script>
+    const RelayClient = window.BSPRelayClient;
+    const RELAY_URL = `ws://${location.hostname || '127.0.0.1'}:5511`;
+
+    const el = (id) => document.getElementById(id);
+    const panel = el('panel');
+    const titlebar = el('titlebar');
+    const wsDot = el('ws-dot');
+    const wsLabel = el('ws-label');
+    const toggleBtn = el('toggle-btn');
+    const collapseBtn = el('collapse-btn');
+    const expandBtn = el('expand-btn');
+    const closeBtn = el('close-btn');
+    const transcriptBody = el('transcript-body');
+    const scriptureList = el('scripture-list');
+    const engineLabel = el('engine-label');
+
+    const relay = new RelayClient(RELAY_URL);
+
+    let running = false;
+    let interimNode = null;
+    const detected = new Map();
+
+    function setRunningUi(value, engine) {
+      running = !!value;
+      toggleBtn.textContent = running ? 'Stop' : 'Start';
+      toggleBtn.classList.toggle('primary', !running);
+      toggleBtn.classList.toggle('danger', running);
+      engineLabel.textContent = running ? `running${engine ? ' (' + engine + ')' : ''}` : 'idle';
+    }
+
+    function timestamp() { return new Date().toTimeString().slice(0, 8); }
+
+    function appendTranscript({ text, isFinal }) {
+      if (transcriptBody.querySelector('.empty')) transcriptBody.innerHTML = '';
+      if (interimNode && !interimNode.isConnected) interimNode = null;
+      if (!isFinal) {
+        if (!interimNode) {
+          interimNode = document.createElement('div');
+          interimNode.className = 'entry interim';
+          interimNode.innerHTML = '<span class="ts"></span><span class="text"></span>';
+          transcriptBody.appendChild(interimNode);
+        }
+        interimNode.querySelector('.ts').textContent = timestamp();
+        interimNode.querySelector('.text').textContent = text;
+      } else {
+        const node = interimNode || document.createElement('div');
+        node.className = 'entry';
+        if (!node.firstChild) node.innerHTML = '<span class="ts"></span><span class="text"></span>';
+        node.querySelector('.ts').textContent = timestamp();
+        node.querySelector('.text').textContent = text;
+        if (!node.parentNode) transcriptBody.appendChild(node);
+        interimNode = null;
+      }
+      transcriptBody.scrollTop = transcriptBody.scrollHeight;
+      while (transcriptBody.children.length > 80) transcriptBody.removeChild(transcriptBody.firstChild);
+    }
+
+    // --- Minimal scripture detector --------------------------------
+    // Direct references like "John 3:16", "1 Corinthians 13:4-7", and
+    // spoken word-form numbers via a small map. The full V16 parser
+    // (phonetic + Levenshtein + book aliases + auto-project) is the
+    // next planned port — this is intentionally a placeholder.
+    const BOOKS = [
+      'genesis','exodus','leviticus','numbers','deuteronomy','joshua','judges','ruth',
+      '1 samuel','2 samuel','1 kings','2 kings','1 chronicles','2 chronicles','ezra',
+      'nehemiah','esther','job','psalm','psalms','proverbs','ecclesiastes','song of solomon',
+      'isaiah','jeremiah','lamentations','ezekiel','daniel','hosea','joel','amos','obadiah',
+      'jonah','micah','nahum','habakkuk','zephaniah','haggai','zechariah','malachi',
+      'matthew','mark','luke','john','acts','romans','1 corinthians','2 corinthians',
+      'galatians','ephesians','philippians','colossians','1 thessalonians','2 thessalonians',
+      '1 timothy','2 timothy','titus','philemon','hebrews','james','1 peter','2 peter',
+      '1 john','2 john','3 john','jude','revelation'
+    ];
+    const NUMBER_WORDS = {
+      'zero':0,'one':1,'two':2,'three':3,'four':4,'five':5,'six':6,'seven':7,'eight':8,
+      'nine':9,'ten':10,'eleven':11,'twelve':12,'thirteen':13,'fourteen':14,'fifteen':15,
+      'sixteen':16,'seventeen':17,'eighteen':18,'nineteen':19,'twenty':20,'thirty':30,
+      'forty':40,'fifty':50,'sixty':60,'seventy':70,'eighty':80,'ninety':90,'hundred':100
+    };
+    function wordsToNumber(text) {
+      const tokens = text.toLowerCase().split(/[\s-]+/).filter(Boolean);
+      let total = 0, current = 0, found = false;
+      for (const tok of tokens) {
+        if (!(tok in NUMBER_WORDS)) return null;
+        const n = NUMBER_WORDS[tok];
+        found = true;
+        if (n === 100) current = (current || 1) * 100;
+        else if (n >= 20) current += n;
+        else current += n;
+      }
+      total += current;
+      return found ? total : null;
+    }
+    const BOOK_PATTERN = BOOKS.map(b => b.replace(/ /g, '\\s+')).join('|');
+    const DIRECT_REF_RE = new RegExp(`\\b(${BOOK_PATTERN})\\s+(\\d+)\\s*:\\s*(\\d+)(?:\\s*-\\s*(\\d+))?\\b`, 'gi');
+    const SPOKEN_REF_RE = new RegExp(`\\b(${BOOK_PATTERN})\\s+chapter\\s+([a-z\\s-]+?)\\s+verse\\s+([a-z\\s-]+?)(?=\\s|$|[.,!?])`, 'gi');
+
+    function detectScripturesFrom(text) {
+      const out = [];
+      const norm = (text || '').toLowerCase();
+      let m;
+      DIRECT_REF_RE.lastIndex = 0;
+      while ((m = DIRECT_REF_RE.exec(norm))) {
+        const book = titleCaseBook(m[1]);
+        const ref = m[4]
+          ? `${book} ${m[2]}:${m[3]}-${m[4]}`
+          : `${book} ${m[2]}:${m[3]}`;
+        out.push({ ref, score: 1.0, source: 'direct' });
+      }
+      SPOKEN_REF_RE.lastIndex = 0;
+      while ((m = SPOKEN_REF_RE.exec(norm))) {
+        const ch = wordsToNumber(m[2]);
+        const vs = wordsToNumber(m[3]);
+        if (ch && vs) {
+          const book = titleCaseBook(m[1]);
+          out.push({ ref: `${book} ${ch}:${vs}`, score: 0.85, source: 'spoken' });
+        }
+      }
+      return out;
+    }
+    function titleCaseBook(raw) {
+      return raw.replace(/\s+/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    }
+
+    function pushScripture(ref, source) {
+      if (detected.has(ref)) {
+        detected.get(ref).count += 1;
+        renderScripture();
+        return;
+      }
+      detected.set(ref, { ref, source, count: 1, ts: Date.now() });
+      renderScripture();
+      relay.send({ type: 'ai:scripture', candidates: [{ ref, source }] });
+    }
+
+    function renderScripture() {
+      if (detected.size === 0) {
+        scriptureList.innerHTML = '<div class="empty">No verses detected yet</div>';
+        return;
+      }
+      const items = [...detected.values()].sort((a, b) => b.ts - a.ts).slice(0, 12);
+      scriptureList.innerHTML = '';
+      for (const item of items) {
+        const card = document.createElement('div');
+        card.className = 'scripture-card';
+        card.innerHTML = `
+          <div class="ref"></div>
+          <div class="src"></div>
+          <div class="actions">
+            <button class="btn primary push">Push to Display</button>
+            <button class="btn dismiss">Dismiss</button>
+          </div>`;
+        card.querySelector('.ref').textContent = item.ref;
+        card.querySelector('.src').textContent = `${item.source} • seen ${item.count}×`;
+        card.querySelector('.push').addEventListener('click', () => {
+          relay.send({ type: 'ai:project-verse', ref: item.ref });
+        });
+        card.querySelector('.dismiss').addEventListener('click', () => {
+          detected.delete(item.ref);
+          renderScripture();
+        });
+        scriptureList.appendChild(card);
+      }
+    }
+
+    // --- Drag the panel within the dock area -----------------------
+    let dragState = null;
+    titlebar.addEventListener('mousedown', (e) => {
+      if (e.target.closest('.controls')) return;
+      const rect = panel.getBoundingClientRect();
+      dragState = { offX: e.clientX - rect.left, offY: e.clientY - rect.top };
+      e.preventDefault();
+    });
+    window.addEventListener('mousemove', (e) => {
+      if (!dragState) return;
+      const x = Math.max(0, Math.min(window.innerWidth - 40, e.clientX - dragState.offX));
+      const y = Math.max(0, Math.min(window.innerHeight - 40, e.clientY - dragState.offY));
+      panel.style.left = x + 'px';
+      panel.style.top = y + 'px';
+    });
+    window.addEventListener('mouseup', () => { dragState = null; });
+
+    // Allow dragging the collapsed bubble too (whole panel acts as drag handle)
+    panel.addEventListener('mousedown', (e) => {
+      if (!panel.classList.contains('collapsed')) return;
+      if (e.target.closest('#expand-btn')) return;
+      const rect = panel.getBoundingClientRect();
+      dragState = { offX: e.clientX - rect.left, offY: e.clientY - rect.top };
+      e.preventDefault();
+    });
+
+    // --- Window controls -------------------------------------------
+    toggleBtn.addEventListener('click', () => {
+      relay.send({ type: running ? 'ai:stop' : 'ai:start' });
+    });
+    collapseBtn.addEventListener('click', () => panel.classList.add('collapsed'));
+    expandBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      panel.classList.remove('collapsed');
+    });
+    closeBtn.addEventListener('click', () => panel.classList.add('hidden'));
+
+    // External re-summon (BSP menu icon broadcasts this).
+    relay.on('ai:dock-summon', () => {
+      panel.classList.remove('hidden');
+      panel.classList.remove('collapsed');
+    });
+
+    // --- Relay subscriptions ---------------------------------------
+    relay.onStatus((connected) => {
+      wsDot.classList.toggle('on', connected);
+      wsLabel.textContent = connected ? 'Connected' : 'Disconnected';
+    });
+
+    relay.on('ai:status', (msg) => {
+      setRunningUi(msg.running, msg.engine);
+      if (msg.error) wsDot.classList.add('err');
+    });
+
+    relay.on('ai:transcript', (msg) => {
+      appendTranscript({ text: msg.text || '', isFinal: !!msg.isFinal });
+      if (msg.isFinal) {
+        const hits = detectScripturesFrom(msg.text || '');
+        for (const hit of hits) pushScripture(hit.ref, hit.source);
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,1966 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>EasyWorship → OBS Overlay</title>
+  <style>
+    /* ─── Google Fonts ─── */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&family=Noto+Sans:ital,wght@0,400;0,700;1,400&display=swap');
+
+    /* ─── Reset & Base ─── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --accent:   #6C63FF;
+      --accent2:  #F59E0B;
+      --glass-bg: rgba(10,10,20,0.75);
+      --glass-border: rgba(255,255,255,0.08);
+      --text-primary: #F0F0FF;
+      --text-dim: rgba(255,255,255,0.45);
+      --radius: 14px;
+      --shadow: 0 8px 40px rgba(0,0,0,0.6);
+    }
+
+    html, body {
+      width: 1920px; height: 1080px;
+      background: transparent;
+      font-family: 'Inter', 'Noto Sans', sans-serif;
+      overflow: hidden;
+      color: var(--text-primary);
+      user-select: none;
+    }
+
+    /* ─── MODE TOGGLE ─── */
+    /* Saat OBS meload, tampilkan overlay mode (transparan, hanya lirik).
+       Saat dibuka di browser biasa, tampilkan control panel juga. */
+
+    /* ═══════════════════════════════════════════
+       LYRICS OVERLAY (selalu tampil, posisi bawah)
+    ═══════════════════════════════════════════ */
+    #overlay {
+      position: fixed;
+      bottom: 60px;
+      left: 80px; right: 80px;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    #lyrics-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.4s ease, transform 0.4s ease;
+    }
+
+    #lyrics-container.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    #section-label {
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--accent2);
+      text-shadow: 0 0 20px rgba(245,158,11,0.8);
+      margin-bottom: 10px;
+      min-height: 20px;
+    }
+
+    #lyrics-text {
+      text-align: center;
+      font-size: 48px;
+      font-weight: 700;
+      line-height: 1.35;
+      color: #FFFFFF;
+      text-shadow:
+        0 0 40px rgba(108,99,255,0.6),
+        0 2px 4px rgba(0,0,0,0.9),
+        0 4px 16px rgba(0,0,0,0.7);
+      letter-spacing: 0.3px;
+      background: linear-gradient(180deg, #FFFFFF 60%, rgba(255,255,255,0.75) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      filter: drop-shadow(0 2px 8px rgba(0,0,0,0.8));
+    }
+
+    #song-title-bar {
+      margin-top: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      opacity: 0.7;
+    }
+
+    #song-title-bar .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 10px var(--accent);
+    }
+
+    #song-title-bar span {
+      font-size: 16px;
+      font-weight: 400;
+      color: rgba(255,255,255,0.6);
+      letter-spacing: 1px;
+    }
+
+    /* ═══════════════════════════════════════════
+       CONTROL PANEL (panel bawah, tersembunyi di OBS)
+    ═══════════════════════════════════════════ */
+    #control-panel {
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(135deg, #0a0a1a 0%, #12121f 50%, #0d0d1e 100%);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Sembunyikan panel saat OBS memuat (query param ?obs=1) */
+    body.obs-mode #control-panel { display: none !important; }
+    body.obs-mode #overlay { pointer-events: none; }
+    body.obs-mode { background: transparent !important; }
+
+    /* Header */
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 28px;
+      background: rgba(255,255,255,0.03);
+      border-bottom: 1px solid var(--glass-border);
+      flex-shrink: 0;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-icon {
+      width: 38px; height: 38px;
+      background: linear-gradient(135deg, var(--accent), #a78bfa);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+      box-shadow: 0 4px 15px rgba(108,99,255,0.4);
+    }
+
+    .logo-text h1 {
+      font-size: 17px;
+      font-weight: 700;
+      background: linear-gradient(90deg, var(--accent), #a78bfa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .logo-text p {
+      font-size: 11px;
+      color: var(--text-dim);
+      margin-top: 1px;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    /* Buttons */
+    .btn {
+      padding: 8px 18px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      transition: all 0.2s ease;
+      display: flex; align-items: center; gap: 7px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), #a78bfa);
+      color: #fff;
+      box-shadow: 0 4px 15px rgba(108,99,255,0.3);
+    }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(108,99,255,0.5); }
+
+    .btn-ghost {
+      background: var(--glass-bg);
+      color: var(--text-primary);
+      border: 1px solid var(--glass-border);
+    }
+    .btn-ghost:hover { background: rgba(255,255,255,0.08); }
+
+    .btn-danger {
+      background: rgba(239,68,68,0.15);
+      color: #f87171;
+      border: 1px solid rgba(239,68,68,0.25);
+    }
+    .btn-danger:hover { background: rgba(239,68,68,0.25); }
+
+    .btn-success {
+      background: rgba(34,197,94,0.15);
+      color: #4ade80;
+      border: 1px solid rgba(34,197,94,0.25);
+    }
+    .btn-success:hover { background: rgba(34,197,94,0.25); }
+
+    .btn-icon {
+      padding: 8px;
+      border-radius: 8px;
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      color: var(--text-dim);
+      cursor: pointer;
+      font-size: 16px;
+      transition: all 0.2s;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .btn-icon:hover { color: var(--text-primary); background: rgba(255,255,255,0.08); }
+    .btn-icon.active { color: var(--accent); border-color: var(--accent); }
+
+    /* Main Layout */
+    .panel-body {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* ── Sidebar: Daftar Lagu ── */
+    .sidebar {
+      width: 300px;
+      min-width: 260px;
+      border-right: 1px solid var(--glass-border);
+      display: flex;
+      flex-direction: column;
+      background: rgba(0,0,0,0.2);
+    }
+
+    .sidebar-header {
+      padding: 16px 18px 12px;
+      border-bottom: 1px solid var(--glass-border);
+    }
+
+    .sidebar-header h2 {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--text-dim);
+      margin-bottom: 10px;
+    }
+
+    .search-box {
+      position: relative;
+    }
+
+    .search-box input {
+      width: 100%;
+      padding: 8px 12px 8px 34px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--glass-border);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .search-box input:focus { border-color: var(--accent); }
+    .search-box input::placeholder { color: var(--text-dim); }
+
+    .search-box .search-icon {
+      position: absolute;
+      left: 10px; top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-dim);
+      font-size: 14px;
+      pointer-events: none;
+    }
+
+    .song-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
+    }
+
+    .song-list::-webkit-scrollbar { width: 4px; }
+    .song-list::-webkit-scrollbar-track { background: transparent; }
+    .song-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+    .song-item {
+      padding: 10px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border: 1px solid transparent;
+    }
+
+    .song-item:hover {
+      background: rgba(255,255,255,0.05);
+    }
+
+    .song-item.active {
+      background: rgba(108,99,255,0.15);
+      border-color: rgba(108,99,255,0.3);
+    }
+
+    .song-item .song-number {
+      font-size: 10px;
+      color: var(--text-dim);
+      min-width: 22px;
+      text-align: right;
+    }
+
+    .song-item .song-name {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-primary);
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .song-item.active .song-name { color: #a78bfa; }
+
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      height: 200px;
+      color: var(--text-dim);
+    }
+
+    .empty-state .empty-icon { font-size: 36px; opacity: 0.4; }
+    .empty-state p { font-size: 13px; text-align: center; line-height: 1.6; }
+
+    /* ── Main: Slides ── */
+    .main-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .main-toolbar {
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--glass-border);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+      background: rgba(0,0,0,0.15);
+    }
+
+    .main-toolbar .song-info {
+      flex: 1;
+    }
+
+    .main-toolbar .song-info h2 {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .main-toolbar .song-info p {
+      font-size: 12px;
+      color: var(--text-dim);
+      margin-top: 2px;
+    }
+
+    .slide-counter {
+      font-size: 12px;
+      color: var(--text-dim);
+      padding: 6px 12px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 20px;
+      border: 1px solid var(--glass-border);
+    }
+
+    /* Slides Grid */
+    .slides-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 14px;
+      align-content: start;
+    }
+
+    .slides-area::-webkit-scrollbar { width: 6px; }
+    .slides-area::-webkit-scrollbar-track { background: transparent; }
+    .slides-area::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
+
+    .slide-card {
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius);
+      padding: 16px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-height: 120px;
+    }
+
+    .slide-card:hover {
+      border-color: rgba(108,99,255,0.4);
+      background: rgba(108,99,255,0.06);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+    }
+
+    .slide-card.active {
+      border-color: var(--accent);
+      background: rgba(108,99,255,0.12);
+      box-shadow: 0 0 0 1px var(--accent), 0 8px 25px rgba(108,99,255,0.2);
+    }
+
+    .slide-card.live {
+      border-color: #22c55e;
+      background: rgba(34,197,94,0.08);
+      box-shadow: 0 0 0 1px #22c55e, 0 8px 25px rgba(34,197,94,0.15);
+    }
+
+    .slide-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .slide-section-tag {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 4px;
+      background: rgba(108,99,255,0.2);
+      color: #a78bfa;
+    }
+
+    .slide-section-tag.chorus { background: rgba(245,158,11,0.2); color: #fbbf24; }
+    .slide-section-tag.bridge { background: rgba(239,68,68,0.2); color: #f87171; }
+    .slide-section-tag.tag    { background: rgba(20,184,166,0.2); color: #2dd4bf; }
+    .slide-section-tag.intro  { background: rgba(99,102,241,0.2); color: #818cf8; }
+    .slide-section-tag.outro  { background: rgba(99,102,241,0.2); color: #818cf8; }
+    .slide-section-tag.live-badge {
+      background: rgba(34,197,94,0.2);
+      color: #4ade80;
+      animation: pulse-live 1.5s infinite;
+    }
+
+    @keyframes pulse-live {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .slide-text {
+      font-size: 13px;
+      line-height: 1.6;
+      color: rgba(255,255,255,0.75);
+      flex: 1;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 5;
+      -webkit-box-orient: vertical;
+    }
+
+    .slide-num {
+      font-size: 10px;
+      color: var(--text-dim);
+      text-align: right;
+    }
+
+    /* ── Bottom Bar ── */
+    .bottom-bar {
+      padding: 12px 20px;
+      border-top: 1px solid var(--glass-border);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+      background: rgba(0,0,0,0.25);
+    }
+
+    .now-playing {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .live-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #22c55e;
+      box-shadow: 0 0 8px #22c55e;
+      animation: pulse-live 1.5s infinite;
+      flex-shrink: 0;
+    }
+
+    .live-dot.off {
+      background: rgba(255,255,255,0.2);
+      box-shadow: none;
+      animation: none;
+    }
+
+    .now-playing-text {
+      font-size: 13px;
+      color: var(--text-dim);
+    }
+
+    .now-playing-text strong {
+      color: var(--text-primary);
+    }
+
+    /* ── Import Area ── */
+    #import-screen {
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(135deg, #0a0a1a 0%, #12121f 50%, #0d0d1e 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 30px;
+      z-index: 100;
+    }
+
+    #import-screen.hidden { display: none !important; }
+
+    .import-logo {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .import-logo-icon {
+      width: 80px; height: 80px;
+      background: linear-gradient(135deg, var(--accent), #a78bfa);
+      border-radius: 22px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 38px;
+      box-shadow: 0 12px 40px rgba(108,99,255,0.4);
+      animation: float 3s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+
+    .import-logo h1 {
+      font-size: 28px;
+      font-weight: 900;
+      background: linear-gradient(90deg, var(--accent), #a78bfa, #f0abfc);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .import-logo p {
+      font-size: 15px;
+      color: var(--text-dim);
+      text-align: center;
+    }
+
+    .drop-zone {
+      width: 520px;
+      border: 2px dashed rgba(108,99,255,0.4);
+      border-radius: 20px;
+      padding: 50px 40px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      background: rgba(108,99,255,0.04);
+      position: relative;
+    }
+
+    .drop-zone:hover, .drop-zone.drag-over {
+      border-color: var(--accent);
+      background: rgba(108,99,255,0.1);
+      transform: scale(1.01);
+    }
+
+    .drop-zone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    .drop-zone .drop-icon { font-size: 50px; margin-bottom: 16px; }
+    .drop-zone h2 { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+    .drop-zone p { font-size: 14px; color: var(--text-dim); line-height: 1.7; }
+
+    .file-formats {
+      display: flex;
+      gap: 10px;
+      margin-top: 16px;
+      justify-content: center;
+    }
+
+    .format-badge {
+      padding: 5px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      background: rgba(255,255,255,0.07);
+      color: var(--text-dim);
+      border: 1px solid var(--glass-border);
+    }
+
+    /* Toast notification */
+    #toast {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      background: rgba(20,20,35,0.95);
+      border: 1px solid var(--glass-border);
+      border-radius: 10px;
+      padding: 14px 20px;
+      font-size: 13px;
+      color: var(--text-primary);
+      box-shadow: var(--shadow);
+      z-index: 999;
+      transform: translateY(20px);
+      opacity: 0;
+      transition: all 0.3s ease;
+      max-width: 360px;
+    }
+
+    #toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    /* Loading spinner */
+    .spinner {
+      width: 20px; height: 20px;
+      border: 2px solid rgba(255,255,255,0.1);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── OBS Hint Bar ── */
+    .obs-hint {
+      padding: 8px 16px;
+      background: rgba(245,158,11,0.08);
+      border-bottom: 1px solid rgba(245,158,11,0.15);
+      font-size: 11px;
+      color: rgba(245,158,11,0.7);
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    /* ── Keyboard Shortcuts ── */
+    .kbd {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 6px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 4px;
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+
+    /* Progress bar */
+    .slide-progress {
+      height: 2px;
+      background: rgba(255,255,255,0.06);
+      flex-shrink: 0;
+    }
+
+    .slide-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), #a78bfa);
+      transition: width 0.3s ease;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════
+     IMPORT SCREEN
+══════════════════════════════════════ -->
+<div id="import-screen">
+  <div class="import-logo">
+    <div class="import-logo-icon">🎵</div>
+    <h1>EasyWorship → OBS</h1>
+    <p>Import file EasyWorship 7 dan tampilkan lirik<br>langsung di OBS sebagai Browser Source</p>
+  </div>
+
+  <div class="drop-zone" id="drop-zone">
+    <input type="file" id="file-input" accept="*/*" multiple style="display:none;" />
+    <input type="file" id="folder-input" webkitdirectory directory multiple style="display:none;" />
+    <div class="drop-icon">📂</div>
+    <h2>Import File / Folder EasyWorship</h2>
+    <p style="margin-bottom:16px;">
+      Drag &amp; drop file <code>.ewsx</code> atau folder database ke sini
+    </p>
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:12px;">
+      <button type="button" class="btn btn-primary" id="btn-pick-file" style="padding:10px 18px;font-size:13px;cursor:pointer;">
+        📄 Pilih File (.ewsx / Songs.db / Semua File)
+      </button>
+      <button type="button" class="btn btn-ghost" id="btn-pick-folder" style="padding:10px 18px;font-size:13px;cursor:pointer;">
+        📁 Pilih Folder Database
+      </button>
+      <button type="button" class="btn btn-ghost" id="btn-load-sample" style="padding:10px 18px;font-size:13px;cursor:pointer;border-color:var(--accent2);color:var(--accent2);">
+        ⚡ Muat Jadwal 2_September.ewsx
+      </button>
+    </div>
+    <div class="file-formats">
+      <span class="format-badge">.ewsx (Jadwal)</span>
+      <span class="format-badge">Songs.db</span>
+      <span class="format-badge">SongWords.db</span>
+    </div>
+  </div>
+
+  <div style="font-size:12px; color:var(--text-dim); text-align:center; line-height:1.8; max-width:620px;">
+    💡 <strong>Lokasi Database di PC ini:</strong><br>
+    <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:6px;">
+      <code id="ew-path-text" style="background:rgba(255,255,255,0.08);padding:5px 10px;border-radius:6px;font-size:11px;user-select:all;color:#e2e8f0;">
+        C:\Users\Public\Documents\Softouch\Easyworship\New Profile 3\v6.1\Databases\Data\
+      </code>
+      <button type="button" class="btn btn-ghost" id="btn-copy-path" style="padding:4px 10px;font-size:11px;cursor:pointer;">
+        📋 Salin
+      </button>
+    </div>
+    <small style="color:rgba(255,255,255,0.4);display:block;margin-top:6px;">
+      Pilih folder di atas untuk memuat <strong>1.396 lagu</strong> sekaligus, atau pilih file jadwal <code>.ewsx</code> dari folder Schedules.
+    </small>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     CONTROL PANEL
+══════════════════════════════════════ -->
+<div id="control-panel" style="display:none;">
+  <div class="obs-hint">
+    💡 Di OBS: tambahkan sebagai <strong>Browser Source</strong> → ukuran 1920×1080 → centang <strong>"Shutdown source when not visible"</strong>
+  </div>
+
+  <div class="panel-header">
+    <div class="logo">
+      <div class="logo-icon">🎵</div>
+      <div class="logo-text">
+        <h1>EasyWorship → OBS</h1>
+        <p id="db-info">Memuat database...</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-ghost" id="btn-reimport" title="Import file baru">
+        📂 Import Lagi
+      </button>
+      <button class="btn btn-danger" id="btn-clear-live" title="Sembunyikan overlay di OBS">
+        🔳 Clear Overlay
+      </button>
+      <button class="btn btn-icon" id="btn-fullscreen" title="Fullscreen">⛶</button>
+    </div>
+  </div>
+
+  <div class="slide-progress">
+    <div class="slide-progress-fill" id="progress-fill" style="width:0%"></div>
+  </div>
+
+  <div class="panel-body">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <h2>Daftar Lagu (<span id="song-count">0</span>)</h2>
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="search-input" placeholder="Cari lagu..." autocomplete="off" />
+        </div>
+      </div>
+      <div class="song-list" id="song-list">
+        <div class="empty-state">
+          <div class="empty-icon">🎼</div>
+          <p>Belum ada lagu.<br>Import file EasyWorship terlebih dahulu.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Area -->
+    <div class="main-area">
+      <div class="main-toolbar">
+        <div class="song-info">
+          <h2 id="current-song-title">Pilih lagu dari daftar kiri</h2>
+          <p id="current-song-meta">—</p>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button class="btn-icon" id="btn-prev-slide" title="Slide sebelumnya (←)">◀</button>
+          <span class="slide-counter" id="slide-counter">0 / 0</span>
+          <button class="btn-icon" id="btn-next-slide" title="Slide berikutnya (→)">▶</button>
+        </div>
+      </div>
+
+      <div class="slides-area" id="slides-area">
+        <div class="empty-state" style="grid-column:1/-1;">
+          <div class="empty-icon">🎤</div>
+          <p>Pilih lagu untuk melihat slide<br>
+          <small style="font-size:11px;color:rgba(255,255,255,0.2);">Klik slide untuk tampilkan di OBS overlay</small></p>
+        </div>
+      </div>
+
+      <div class="bottom-bar">
+        <div class="live-dot off" id="live-dot"></div>
+        <div class="now-playing" id="now-playing-info">
+          <span class="now-playing-text">Tidak ada yang sedang live</span>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;font-size:11px;color:var(--text-dim);">
+          <span class="kbd">←→</span> navigasi slide &nbsp;
+          <span class="kbd">Space</span> next &nbsp;
+          <span class="kbd">Esc</span> clear
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     LYRICS OVERLAY (always on top, for OBS)
+══════════════════════════════════════ -->
+<div id="overlay">
+  <div id="lyrics-container">
+    <div id="section-label"></div>
+    <div id="lyrics-text"></div>
+    <div id="song-title-bar">
+      <div class="dot"></div>
+      <span id="overlay-song-title"></span>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- ══════════════════════════════════════
+     LIBRARIES (Local first, CDN fallback)
+══════════════════════════════════════ -->
+<script src="lib/jszip.min.js"></script>
+<script src="lib/sql-wasm.js"></script>
+<script src="lib/sql-wasm-binary.js"></script>
+<script>
+  if (typeof JSZip === 'undefined') {
+    document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"><\/script>');
+  }
+  if (typeof window.initSqlJs === 'undefined') {
+    document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/sql-wasm.js"><\/script>');
+  }
+</script>
+
+<script>
+// ══════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════
+let songs          = []; // [{id, title, author, slides: [...]}]
+let slides         = []; // [{section, text}]
+let currentSongIdx  = -1;
+let currentSlideIdx = -1;
+let SQL            = null;
+let dbSongs        = null;
+let dbWords        = null;
+let scheduleDb     = null;
+let isScheduleMode = false;
+
+// ══════════════════════════════════════════════
+// INIT: Cek mode OBS atau normal
+// ══════════════════════════════════════════════
+(function detectMode() {
+  const params = new URLSearchParams(location.search);
+  if (params.get("obs") === "1") {
+    document.body.classList.add("obs-mode");
+    document.getElementById("import-screen").classList.add("hidden");
+  }
+})();
+
+// Copy path helper
+document.getElementById("btn-copy-path")?.addEventListener("click", () => {
+  const text = document.getElementById("ew-path-text").textContent.trim();
+  navigator.clipboard.writeText(text).then(() => {
+    showToast("📋 Path berhasil disalin ke clipboard!", "success");
+  }).catch(() => {
+    showToast("Gagal menyalin, silakan blok dan salin manual.", "warning");
+  });
+});
+
+// ══════════════════════════════════════════════
+// sql.js Initialization
+// ══════════════════════════════════════════════
+let sqlEnginePromise = null;
+
+async function getSqlEngine() {
+  if (SQL) return SQL;
+  if (sqlEnginePromise) return sqlEnginePromise;
+
+  sqlEnginePromise = (async () => {
+    let retries = 0;
+    while (typeof window.initSqlJs !== "function" && retries < 30) {
+      await new Promise(r => setTimeout(r, 100));
+      retries++;
+    }
+
+    if (typeof window.initSqlJs !== "function") {
+      throw new Error("Library sql.js belum termuat. Periksa file lib/sql-wasm.js atau koneksi internet.");
+    }
+
+    // Prioritas 1: Gunakan wasmBinary lokal langsung (100% offline & bebas CORS di file://)
+    if (typeof window.SQL_WASM_BINARY !== "undefined" && window.SQL_WASM_BINARY) {
+      try {
+        SQL = await window.initSqlJs({
+          wasmBinary: window.SQL_WASM_BINARY
+        });
+        return SQL;
+      } catch (binErr) {
+        console.warn("Init dengan wasmBinary gagal, mencoba locateFile:", binErr);
+      }
+    }
+
+    // Prioritas 2: locateFile lokal
+    try {
+      SQL = await window.initSqlJs({
+        locateFile: file => `./lib/${file}`
+      });
+      return SQL;
+    } catch (localErr) {
+      console.warn("Gagal load sql.js lokal, mencoba CDN...", localErr);
+      SQL = await window.initSqlJs({
+        locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/${file}`
+      });
+      return SQL;
+    }
+  })();
+
+  try {
+    return await sqlEnginePromise;
+  } catch (err) {
+    sqlEnginePromise = null;
+    showToast("❌ " + err.message, "error");
+    throw err;
+  }
+}
+
+// Inisialisasi engine database langsung saat halaman dibuka di browser
+window.addEventListener("DOMContentLoaded", () => {
+  getSqlEngine().catch(e => console.warn("Background SQL init:", e));
+});
+
+// ══════════════════════════════════════════════
+// FILE & FOLDER IMPORT
+// ══════════════════════════════════════════════
+const fileInput   = document.getElementById("file-input");
+const folderInput = document.getElementById("folder-input");
+const dropZone    = document.getElementById("drop-zone");
+
+document.getElementById("btn-pick-file")?.addEventListener("click", (e) => {
+  e.stopPropagation();
+  fileInput.click();
+});
+
+document.getElementById("btn-pick-folder")?.addEventListener("click", (e) => {
+  e.stopPropagation();
+  folderInput.click();
+});
+
+document.getElementById("btn-load-sample")?.addEventListener("click", async (e) => {
+  e.stopPropagation();
+  try {
+    showToast("⏳ Mengambil file 2_September.ewsx...", "info");
+    const resp = await fetch("2_September.ewsx");
+    if (!resp.ok) throw new Error("File tidak ditemukan di folder");
+    const blob = await resp.blob();
+    const file = new File([blob], "2_September.ewsx", { type: "application/octet-stream" });
+    handleFiles([file]);
+  } catch (err) {
+    showToast("Klik 'Pilih File' lalu pilih file 2_September.ewsx", "info");
+    fileInput.click();
+  }
+});
+
+dropZone.addEventListener("click", (e) => {
+  if (e.target.tagName !== "BUTTON") {
+    fileInput.click();
+  }
+});
+
+fileInput.addEventListener("change", e => {
+  const selectedFiles = Array.from(e.target.files);
+  e.target.value = "";
+  handleFiles(selectedFiles);
+});
+
+folderInput.addEventListener("change", e => {
+  const selectedFiles = Array.from(e.target.files);
+  e.target.value = "";
+  handleFiles(selectedFiles);
+});
+
+dropZone.addEventListener("dragover", e => {
+  e.preventDefault();
+  dropZone.classList.add("drag-over");
+});
+
+dropZone.addEventListener("dragleave", () => dropZone.classList.remove("drag-over"));
+
+dropZone.addEventListener("drop", e => {
+  e.preventDefault();
+  dropZone.classList.remove("drag-over");
+  if (e.dataTransfer.files && e.dataTransfer.files.length) {
+    handleFiles(Array.from(e.dataTransfer.files));
+  }
+});
+
+async function handleFiles(files) {
+  if (!files || !files.length) return;
+
+  try {
+    showToast("⏳ Menginisialisasi engine database...", "info");
+    await getSqlEngine();
+
+    showToast("⏳ Memproses file...", "info");
+
+    let songsDbBytes = null;
+    let wordsDbBytes = null;
+    let ewsxFile     = null;
+
+    for (const file of files) {
+      const name = file.name.toLowerCase();
+
+      if (name.endsWith(".ewsx") || (name.endsWith(".zip") && !name.includes("songs"))) {
+        ewsxFile = file;
+      } else if (name.endsWith(".ews")) {
+        showToast("⚠️ Format .ews (EasyWorship 2009) adalah format lama. Gunakan file Songs.db / SongWords.db atau .ewsx dari EW6/EW7.", "warning");
+      } else if (name === "songs.db" || name.endsWith("songs.db") || (name.includes("songs") && name.endsWith(".db"))) {
+        songsDbBytes = await readFileAsBytes(file);
+      } else if (name === "songwords.db" || name.includes("songwords") || name.includes("song words") || name === "songword.db") {
+        wordsDbBytes = await readFileAsBytes(file);
+      } else if (name.endsWith(".db") || name.endsWith(".sqlite") || name.endsWith(".sqlite3")) {
+        const bytes = await readFileAsBytes(file);
+        const detected = detectDbType(bytes);
+        if (detected === "schedule") {
+          loadScheduleDatabase(bytes, file.name);
+          return;
+        } else if (detected === "words") {
+          wordsDbBytes = bytes;
+        } else {
+          songsDbBytes = bytes;
+        }
+      }
+    }
+
+    // Jika ada file jadwal .ewsx
+    if (ewsxFile) {
+      showToast("📦 Membuka file jadwal " + ewsxFile.name + "...", "info");
+      const result = await extractEwsx(ewsxFile);
+      if (result.mainDb) {
+        loadScheduleDatabase(result.mainDb, ewsxFile.name);
+        return;
+      }
+      if (result.songsDb) songsDbBytes = result.songsDb;
+      if (result.wordsDb) wordsDbBytes = result.wordsDb;
+    }
+
+    // Jika ada Songs.db atau SongWords.db
+    if (songsDbBytes || wordsDbBytes) {
+      loadDatabases(songsDbBytes, wordsDbBytes);
+      return;
+    }
+
+    showToast("❌ File tidak dikenali! Pilih Songs.db, SongWords.db, atau file .ewsx", "error");
+  } catch (err) {
+    console.error("handleFiles error:", err);
+    showToast("❌ Gagal memproses file: " + (err.message || err), "error");
+  }
+}
+
+async function extractEwsx(file) {
+  const arrayBuffer = await file.arrayBuffer();
+  if (typeof JSZip === "undefined") {
+    throw new Error("Library JSZip belum termuat.");
+  }
+  const zip = await JSZip.loadAsync(arrayBuffer);
+
+  let mainDb  = null;
+  let songsDb = null;
+  let wordsDb = null;
+
+  for (const [path, entry] of Object.entries(zip.files)) {
+    if (entry.dir) continue;
+    const fname = path.toLowerCase().split("/").pop();
+
+    if (fname === "main.db" || fname === "schedule.db") {
+      mainDb = await entry.async("uint8array");
+    } else if (fname === "songs.db") {
+      songsDb = await entry.async("uint8array");
+    } else if (fname.includes("songwords") || fname.includes("song words") || fname === "songword.db") {
+      wordsDb = await entry.async("uint8array");
+    } else if (fname.endsWith(".db") && !mainDb) {
+      mainDb = await entry.async("uint8array");
+    }
+  }
+
+  return { mainDb, songsDb, wordsDb };
+}
+
+function detectDbType(bytes) {
+  try {
+    const db = new SQL.Database(bytes);
+    const tables = db.exec("SELECT name FROM sqlite_master WHERE type='table'");
+    db.close();
+    if (!tables.length || !tables[0].values.length) return "unknown";
+    const names = tables[0].values.map(r => r[0].toLowerCase()).join(",");
+
+    if (names.includes("presentation") && names.includes("slide")) return "schedule";
+    if (names.includes("word")) return "words";
+    if (names.includes("song")) return "songs";
+    return "songs";
+  } catch {
+    return "unknown";
+  }
+}
+
+function readFileAsBytes(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = e => resolve(new Uint8Array(e.target.result));
+    reader.onerror = reject;
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+// ══════════════════════════════════════════════
+// DATABASE LOADING & PARSING
+// ══════════════════════════════════════════════
+function loadScheduleDatabase(dbBytes, fileName) {
+  try {
+    if (scheduleDb) scheduleDb.close();
+    scheduleDb = new SQL.Database(dbBytes);
+    isScheduleMode = true;
+
+    // Catatan: Gunakan COLLATE BINARY agar terhindar dari error 'no such collation sequence: UTF8_U_CI'
+    const query = "SELECT rowid, title, author, presentation_type, order_index FROM presentation WHERE (title COLLATE BINARY) != '' AND (title COLLATE BINARY) NOT IN ('Blank', 'Global', 'Master') AND presentation_type NOT IN (11, 12, 14) ORDER BY order_index";
+    const items = execQuery(scheduleDb, query);
+
+    if (!items.length) {
+      showToast("⚠️ Tidak ada item lagu/presentasi dalam jadwal ini", "warning");
+      return;
+    }
+
+    songs = items.map((item, idx) => {
+      const pid    = item[0];
+      const title  = item[1] || `Item ${idx + 1}`;
+      const author = item[2] || "";
+
+      // Ambil slide terurut dari presentation ini
+      const slideRows = execQuery(
+        scheduleDb,
+        `SELECT rowid, title, order_index FROM slide WHERE presentation_id = ? ORDER BY order_index`,
+        [pid]
+      );
+
+      const parsedSlides = [];
+
+      for (let sIdx = 0; sIdx < slideRows.length; sIdx++) {
+        const sRow = slideRows[sIdx];
+        const sId  = sRow[0];
+        const sTitle = sRow[1] ? String(sRow[1]).trim() : "";
+
+        // Ambil elemen teks untuk slide ini (skip elemen hak cipta)
+        const elRows = execQuery(
+          scheduleDb,
+          `SELECT e.element_uid, rt.rtf
+           FROM element e
+           JOIN resource_text rt ON rt.resource_id = e.foreground_resource_id
+           WHERE e.slide_id = ? AND e.element_type = 6`,
+          [sId]
+        );
+
+        const texts = [];
+        for (const er of elRows) {
+          const uid = er[0] || "";
+          const rtf = er[1];
+          if (!uid.includes("COPYRIGHT") && rtf) {
+            const plain = stripRtf(rtf);
+            if (plain) texts.push(plain);
+          }
+        }
+
+        let combinedText = texts.join("\n").trim();
+        let sectionLabel = sTitle;
+
+        // Bersihkan angka bait di baris pertama jika ada (misal: "1\nBernyanyilah...")
+        const lines = combinedText.split("\n").map(l => l.trim()).filter(Boolean);
+        if (lines.length > 1 && /^\d+$/.test(lines[0])) {
+          if (!sectionLabel) sectionLabel = `Bait ${lines[0]}`;
+          combinedText = lines.slice(1).join("\n");
+        }
+
+        if (!sectionLabel) {
+          sectionLabel = `Slide ${sIdx + 1}`;
+        }
+
+        if (combinedText) {
+          parsedSlides.push({
+            section: sectionLabel,
+            text: combinedText
+          });
+        }
+      }
+
+      return {
+        id: pid,
+        title: title,
+        author: author,
+        slides: parsedSlides.length > 0 ? parsedSlides : [{ section: "Slide 1", text: "(Slide tanpa teks/media)" }]
+      };
+    });
+
+    document.getElementById("import-screen").classList.add("hidden");
+    document.getElementById("import-screen").style.display = "none";
+    document.getElementById("control-panel").style.display = "flex";
+    document.getElementById("song-count").textContent = songs.length;
+    document.getElementById("db-info").textContent = `Jadwal: ${fileName} (${songs.length} item)`;
+
+    renderSongList(songs);
+    if (songs.length > 0) {
+      selectSong(0);
+    }
+    showToast(`✅ Jadwal "${fileName}" berhasil dimuat: ${songs.length} item!`, "success");
+  } catch (e) {
+    showToast("❌ Error membaca file jadwal: " + e.message, "error");
+    console.error(e);
+  }
+}
+
+function loadDatabases(songsBytes, wordsBytes) {
+  try {
+    isScheduleMode = false;
+
+    if (songsBytes) {
+      if (dbSongs) dbSongs.close();
+      dbSongs = new SQL.Database(songsBytes);
+      songs = readSongsList(dbSongs);
+    }
+
+    if (wordsBytes) {
+      if (dbWords) dbWords.close();
+      dbWords = new SQL.Database(wordsBytes);
+    }
+
+    if (!songs.length) {
+      showToast("⚠️ Tidak ada lagu yang ditemukan di dalam database!", "warning");
+      return;
+    }
+
+    document.getElementById("import-screen").classList.add("hidden");
+    document.getElementById("import-screen").style.display = "none";
+    document.getElementById("control-panel").style.display = "flex";
+    document.getElementById("song-count").textContent = songs.length;
+
+    if (dbWords) {
+      document.getElementById("db-info").textContent = `${songs.length} lagu dimuat (Lirik Siap)`;
+      showToast(`✅ ${songs.length} lagu berhasil dimuat lengkap dengan lirik!`, "success");
+    } else {
+      document.getElementById("db-info").textContent = `${songs.length} lagu (SongWords.db belum ada)`;
+      showToast(`ℹ️ ${songs.length} judul lagu dimuat! Drag SongWords.db untuk memuat liriknya.`, "warning");
+    }
+
+    renderSongList(songs);
+    if (songs.length > 0) {
+      selectSong(0);
+    }
+  } catch (e) {
+    showToast("❌ Error membaca database: " + e.message, "error");
+    console.error(e);
+  }
+}
+
+function readSongsList(db) {
+  const tables = execQuery(db, "SELECT name FROM sqlite_master WHERE type='table'");
+  let songTable = null;
+  for (const row of tables) {
+    if (row[0].toLowerCase() === "song" || row[0].toLowerCase() === "songs") {
+      songTable = row[0];
+      break;
+    }
+  }
+  if (!songTable) {
+    for (const row of tables) {
+      if (row[0].toLowerCase().includes("song")) { songTable = row[0]; break; }
+    }
+  }
+  if (!songTable && tables.length) {
+    songTable = tables[0][0];
+  }
+  if (!songTable) return [];
+
+  const cols = getColumns(db, songTable);
+  const titleCol  = cols.find(c => c.toLowerCase() === "title") || cols.find(c => c.toLowerCase().includes("title")) || cols[1] || cols[0];
+  const authorCol = cols.find(c => c.toLowerCase().includes("author") || c.toLowerCase().includes("writer"));
+  const idCol     = cols.find(c => ["rowid", "id", "song_item_uid", "song_uid", "uid"].includes(c.toLowerCase())) || "rowid";
+
+  const query = authorCol
+    ? `SELECT ${idCol}, ${titleCol}, ${authorCol} FROM ${songTable} ORDER BY (${titleCol} COLLATE NOCASE)`
+    : `SELECT ${idCol}, ${titleCol} FROM ${songTable} ORDER BY (${titleCol} COLLATE NOCASE)`;
+
+  const rows = execQuery(db, query);
+  return rows.map(r => ({
+    id:     r[0],
+    title:  r[1] || "(tanpa judul)",
+    author: r[2] || ""
+  }));
+}
+
+function readSongLyrics(songId) {
+  if (isScheduleMode && songs[currentSongIdx] && songs[currentSongIdx].slides) {
+    return songs[currentSongIdx].slides;
+  }
+
+  if (!dbWords) {
+    return [{
+      section: "Perhatian",
+      text: "File SongWords.db belum di-import!\nSilakan klik 'Import Lagi' dan pilih file SongWords.db."
+    }];
+  }
+
+  const queries = [
+    `SELECT words FROM word WHERE song_id = ?`,
+    `SELECT words FROM word WHERE rowid = ?`,
+    `SELECT words FROM words WHERE song_id = ?`,
+    `SELECT words FROM words WHERE rowid = ?`
+  ];
+
+  for (const q of queries) {
+    try {
+      const rows = execQuery(dbWords, q, [songId]);
+      if (rows && rows.length > 0 && rows[0][0]) {
+        const rawWords = rows[0][0];
+        const parsed = parseIntoSlides(rawWords);
+        if (parsed && parsed.length > 0) return parsed;
+      }
+    } catch (e) {}
+  }
+
+  const tables = execQuery(dbWords, "SELECT name FROM sqlite_master WHERE type='table'");
+  for (const [tname] of tables) {
+    const cols = getColumns(dbWords, tname);
+    const textCol = cols.find(c => ["words", "word", "lyric", "text", "rtf", "content"].some(k => c.toLowerCase().includes(k))) || cols[cols.length - 1];
+    const refCol = cols.find(c => ["song_id", "songid", "song", "parent", "fk"].some(k => c.toLowerCase().includes(k)) && c !== textCol);
+
+    if (textCol) {
+      try {
+        const rows = refCol
+          ? execQuery(dbWords, `SELECT ${textCol} FROM ${tname} WHERE ${refCol}=?`, [songId])
+          : execQuery(dbWords, `SELECT ${textCol} FROM ${tname} WHERE rowid=?`, [songId]);
+        if (rows.length > 0 && rows[0][0]) {
+          return parseIntoSlides(rows[0][0]);
+        }
+      } catch (err) {}
+    }
+  }
+
+  return [{ section: "—", text: "(Lirik tidak ditemukan di SongWords.db)" }];
+}
+
+// ══════════════════════════════════════════════
+// RTF → Plain Text Parser (Presisi EasyWorship)
+// ══════════════════════════════════════════════
+function stripRtf(rtf) {
+  if (!rtf || !String(rtf).trim().startsWith("{\\rtf")) return String(rtf || "").trim();
+
+  const text = String(rtf);
+  let result = "";
+  let i = 0;
+  let depth = 0;
+  let skipGroup = 0;
+
+  const SKIP_DESTS = [
+    "\\fonttbl", "\\colortbl", "\\stylesheet", "\\info",
+    "\\generator", "\\xmlnstbl", "\\datastore"
+  ];
+
+  while (i < text.length) {
+    const c = text[i];
+
+    if (c === "{") {
+      depth++;
+      for (const dest of SKIP_DESTS) {
+        if (text.startsWith(dest, i + 1)) {
+          skipGroup = depth;
+          break;
+        }
+      }
+      if (text.startsWith("\\*", i + 1)) {
+        skipGroup = depth;
+      }
+      i++;
+      continue;
+    }
+
+    if (c === "}") {
+      if (skipGroup === depth) {
+        skipGroup = 0;
+      }
+      depth--;
+      i++;
+      continue;
+    }
+
+    if (skipGroup && depth >= skipGroup) {
+      i++;
+      continue;
+    }
+
+    if (c === "\\") {
+      if (i + 1 < text.length) {
+        const nc = text[i + 1];
+        if (nc === "\\") { result += "\n"; i += 2; continue; }
+        if (nc === "~")  { result += " ";  i += 2; continue; }
+        if (nc === "\n" || nc === "\r") { result += "\n"; i += 2; continue; }
+        if (nc === "'") {
+          const hex = text.slice(i + 2, i + 4);
+          try { result += String.fromCharCode(parseInt(hex, 16)); } catch {}
+          i += 4;
+          continue;
+        }
+
+        let j = i + 1;
+        while (j < text.length && /[a-zA-Z]/.test(text[j])) j++;
+        const word = text.slice(i + 1, j).toLowerCase();
+
+        if (j < text.length && (text[j] === "-" || /\d/.test(text[j]))) {
+          while (j < text.length && (text[j] === "-" || /\d/.test(text[j]))) j++;
+        }
+
+        if (word === "u" && j < text.length && text[j] === "?") {
+          j++;
+        }
+
+        if (j < text.length && text[j] === " ") j++;
+
+        if (word === "par" || word === "line") {
+          result += "\n";
+        } else if (word === "tab") {
+          result += "\t";
+        }
+
+        i = j;
+        continue;
+      }
+    }
+
+    if (c === "\n" || c === "\r") {
+      i++;
+      continue;
+    }
+
+    result += c;
+    i++;
+  }
+
+  return result
+    .split("\n")
+    .map(l => l.trimEnd())
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+// ══════════════════════════════════════════════
+// Parsing Lirik → Slides
+// ══════════════════════════════════════════════
+function parseIntoSlides(rawText) {
+  const plain = stripRtf(rawText);
+  const blocks = plain.split(/\n\s*\n/).filter(b => b.trim());
+
+  const slides = [];
+  let slideNum = 1;
+
+  const SECTION_PATTERNS = [
+    { re: /^(verse\s*\d*|bait\s*\d*)/i,         tag: "verse"  },
+    { re: /^(chorus\s*\d*|refrain|reff|koor)/i, tag: "chorus" },
+    { re: /^(bridge\s*\d*|jembatan)/i,          tag: "bridge" },
+    { re: /^(tag\s*\d*|coda|ending|penutup)/i,  tag: "tag"    },
+    { re: /^(intro\s*\d*|pembuka)/i,            tag: "intro"  },
+    { re: /^(outro\s*\d*|akhir)/i,              tag: "outro"  },
+    { re: /^(pre[- ]?chorus\s*\d*)/i,          tag: "verse"  },
+  ];
+
+  for (const block of blocks) {
+    const lines = block.split("\n").map(l => l.trim()).filter(Boolean);
+    if (!lines.length) continue;
+
+    let section = `Slide ${slideNum}`;
+    let bodyLines = lines;
+
+    const firstLine = lines[0];
+    let sectionFound = false;
+
+    for (const { re } of SECTION_PATTERNS) {
+      if (re.test(firstLine)) {
+        section = firstLine;
+        bodyLines = lines.slice(1);
+        sectionFound = true;
+        break;
+      }
+    }
+
+    if (!sectionFound && lines.length > 1 && firstLine.length <= 25 && firstLine.split(" ").length <= 3 && firstLine === firstLine.toUpperCase() && /[A-Z]/.test(firstLine)) {
+      section = firstLine;
+      bodyLines = lines.slice(1);
+    }
+
+    if (bodyLines.length > 0) {
+      slides.push({
+        section: section,
+        text: bodyLines.join("\n")
+      });
+      slideNum++;
+    } else if (sectionFound) {
+      slides.push({
+        section: section,
+        text: firstLine
+      });
+      slideNum++;
+    }
+  }
+
+  return slides.length > 0 ? slides : [{ section: "Slide 1", text: plain }];
+}
+
+// ══════════════════════════════════════════════
+// SQL Helpers
+// ══════════════════════════════════════════════
+function execQuery(db, sql, params = []) {
+  try {
+    const stmt = db.prepare(sql);
+    stmt.bind(params);
+    const rows = [];
+    while (stmt.step()) rows.push(stmt.get());
+    stmt.free();
+    return rows;
+  } catch (e) {
+    console.error("execQuery error for:", sql, e);
+    return [];
+  }
+}
+
+function getColumns(db, table) {
+  try {
+    const info = db.exec(`PRAGMA table_info(${table})`);
+    if (!info.length) return [];
+    return info[0].values.map(r => r[1]);
+  } catch { return []; }
+}
+
+// ══════════════════════════════════════════════
+// RENDER SONG LIST
+// ══════════════════════════════════════════════
+function renderSongList(list) {
+  const container = document.getElementById("song-list");
+  if (!list.length) {
+    container.innerHTML = `<div class="empty-state">
+      <div class="empty-icon">🔍</div>
+      <p>Tidak ada lagu ditemukan.</p>
+    </div>`;
+    return;
+  }
+
+  container.innerHTML = list.map((song, idx) => `
+    <div class="song-item ${currentSongIdx === idx ? 'active' : ''}"
+         data-idx="${idx}" data-id="${song.id}" onclick="selectSong(${idx})">
+      <span class="song-number">${idx + 1}</span>
+      <span class="song-name" title="${escHtml(song.title)}">${escHtml(song.title)}</span>
+    </div>
+  `).join("");
+}
+
+// ══════════════════════════════════════════════
+// SONG SELECTION & SLIDE DISPLAY
+// ══════════════════════════════════════════════
+function selectSong(idx) {
+  currentSongIdx  = idx;
+  currentSlideIdx = -1;
+  const song = songs[idx];
+
+  // Update sidebar
+  document.querySelectorAll(".song-item").forEach((el, i) => {
+    el.classList.toggle("active", i === idx);
+  });
+
+  // Scroll ke item
+  const el = document.querySelector(`.song-item[data-idx="${idx}"]`);
+  if (el) el.scrollIntoView({ block: "nearest" });
+
+  // Load slides
+  showToast("⏳ Memuat lirik...");
+  setTimeout(() => { // non-blocking
+    slides = readSongLyrics(song.id);
+    renderSlides(song);
+    showToast(`🎵 ${song.title} — ${slides.length} slide`, "success");
+  }, 10);
+}
+
+function renderSlides(song) {
+  document.getElementById("current-song-title").textContent = song.title;
+  document.getElementById("current-song-meta").textContent =
+    song.author ? `oleh ${song.author} · ${slides.length} slide` : `${slides.length} slide`;
+  document.getElementById("slide-counter").textContent = `0 / ${slides.length}`;
+
+  const area = document.getElementById("slides-area");
+  area.innerHTML = slides.map((slide, i) => {
+    const tagClass = getTagClass(slide.section);
+    return `
+      <div class="slide-card ${i === currentSlideIdx ? 'live' : ''}"
+           data-slide="${i}" onclick="goToSlide(${i})" title="Klik untuk tampilkan di OBS">
+        <div class="slide-card-header">
+          <span class="slide-section-tag ${tagClass}">${escHtml(slide.section)}</span>
+          <span class="slide-num">#${i + 1}</span>
+        </div>
+        <div class="slide-text">${escHtml(slide.text || "(kosong)")}</div>
+      </div>
+    `;
+  }).join("");
+}
+
+function getTagClass(section) {
+  const s = (section || "").toLowerCase();
+  if (s.includes("chorus") || s.includes("refr") || s.includes("reff") || s.includes("koor")) return "chorus";
+  if (s.includes("bridge")) return "bridge";
+  if (s.includes("tag") || s.includes("coda") || s.includes("ending")) return "tag";
+  if (s.includes("intro")) return "intro";
+  if (s.includes("outro")) return "outro";
+  return ""; // verse = default purple
+}
+
+// ══════════════════════════════════════════════
+// SLIDE NAVIGATION & OVERLAY UPDATE
+// ══════════════════════════════════════════════
+function goToSlide(idx) {
+  if (idx < 0 || idx >= slides.length) return;
+  currentSlideIdx = idx;
+
+  // Update slide cards
+  document.querySelectorAll(".slide-card").forEach((el, i) => {
+    el.classList.toggle("active", false);
+    el.classList.toggle("live", i === idx);
+    // Update badge
+    const badge = el.querySelector(".slide-section-tag");
+    if (badge) {
+      badge.classList.toggle("live-badge", i === idx);
+    }
+  });
+
+  // Scroll ke slide aktif
+  const activeCard = document.querySelector(`.slide-card[data-slide="${idx}"]`);
+  if (activeCard) activeCard.scrollIntoView({ block: "nearest", behavior: "smooth" });
+
+  // Update counter & progress
+  const total = slides.length;
+  document.getElementById("slide-counter").textContent = `${idx + 1} / ${total}`;
+  document.getElementById("progress-fill").style.width = `${((idx + 1) / total) * 100}%`;
+
+  // Update bottom bar
+  const song = songs[currentSongIdx];
+  const slide = slides[idx];
+  document.getElementById("live-dot").classList.remove("off");
+  document.getElementById("now-playing-info").innerHTML = `
+    <div class="now-playing">
+      <span class="now-playing-text">
+        <strong>${escHtml(song.title)}</strong>
+        &nbsp;·&nbsp; ${escHtml(slide.section)}
+        &nbsp;·&nbsp; Slide ${idx + 1}/${total}
+      </span>
+    </div>
+  `;
+
+  // Update overlay
+  updateOverlay(song.title, slide.section, slide.text);
+}
+
+// ══════════════════════════════════════════════
+// CROSS-WINDOW / OBS BROWSER SYNC
+// ══════════════════════════════════════════════
+const ewSyncChannel = typeof BroadcastChannel !== "undefined" ? new BroadcastChannel("ew_overlay_sync") : null;
+
+function broadcastSlideUpdate(title, section, text) {
+  const payload = { type: "SLIDE_UPDATE", title, section, text, time: Date.now() };
+  if (ewSyncChannel) {
+    try { ewSyncChannel.postMessage(payload); } catch (e) {}
+  }
+  try {
+    localStorage.setItem("ew_live_slide", JSON.stringify(payload));
+  } catch (e) {}
+}
+
+function broadcastSlideClear() {
+  const payload = { type: "SLIDE_CLEAR", time: Date.now() };
+  if (ewSyncChannel) {
+    try { ewSyncChannel.postMessage(payload); } catch (e) {}
+  }
+  try {
+    localStorage.setItem("ew_live_slide", JSON.stringify(payload));
+  } catch (e) {}
+}
+
+if (ewSyncChannel) {
+  ewSyncChannel.onmessage = (e) => {
+    if (!e.data) return;
+    if (e.data.type === "SLIDE_UPDATE") {
+      applyOverlayText(e.data.title, e.data.section, e.data.text);
+    } else if (e.data.type === "SLIDE_CLEAR") {
+      applyOverlayClear();
+    }
+  };
+}
+
+// Interoperability with Bible Song Pro
+const bspSyncChannel = typeof BroadcastChannel !== "undefined" ? new BroadcastChannel("bible_song_pro_v1") : null;
+if (bspSyncChannel) {
+  bspSyncChannel.onmessage = (e) => {
+    const d = e.data || {};
+    if (d.clear || d.type === "clear") {
+      applyOverlayClear();
+      return;
+    }
+    const text = d.text || d.html || "";
+    const title = d.reference || d.songTitle || d.title || "";
+    const section = d.tag || d.section || "";
+    if (text) {
+      applyOverlayText(title, section, text);
+    }
+  };
+}
+
+window.addEventListener("storage", (e) => {
+  if (e.key === "ew_live_slide" && e.newValue) {
+    try {
+      const data = JSON.parse(e.newValue);
+      if (data.type === "SLIDE_UPDATE") {
+        applyOverlayText(data.title, data.section, data.text);
+      } else if (data.type === "SLIDE_CLEAR") {
+        applyOverlayClear();
+      }
+    } catch (err) {}
+  }
+});
+
+// Jika dalam mode OBS, cek slide terakhir yang tersimpan saat pertama kali dibuka
+if (new URLSearchParams(location.search).get("obs") === "1") {
+  try {
+    const saved = localStorage.getItem("ew_live_slide");
+    if (saved) {
+      const data = JSON.parse(saved);
+      if (data && data.type === "SLIDE_UPDATE") {
+        applyOverlayText(data.title, data.section, data.text);
+      }
+    }
+  } catch (err) {}
+}
+
+function updateOverlay(title, section, text) {
+  applyOverlayText(title, section, text);
+  broadcastSlideUpdate(title, section, text);
+}
+
+function applyOverlayText(title, section, text) {
+  const container = document.getElementById("lyrics-container");
+  const sectionEl = document.getElementById("section-label");
+  const textEl    = document.getElementById("lyrics-text");
+  const titleEl   = document.getElementById("overlay-song-title");
+
+  // Fade out
+  container.classList.remove("visible");
+
+  setTimeout(() => {
+    sectionEl.textContent = section || "";
+    textEl.textContent    = text    || "";
+    titleEl.textContent   = title   || "";
+
+    // Fade in
+    if (text) container.classList.add("visible");
+  }, 300);
+}
+
+function clearOverlay() {
+  applyOverlayClear();
+  broadcastSlideClear();
+}
+
+function applyOverlayClear() {
+  currentSlideIdx = -1;
+  document.getElementById("lyrics-container").classList.remove("visible");
+  const liveDot = document.getElementById("live-dot");
+  if (liveDot) liveDot.classList.add("off");
+  const nowPlaying = document.getElementById("now-playing-info");
+  if (nowPlaying) nowPlaying.innerHTML =
+    `<span class="now-playing-text">Tidak ada yang sedang live</span>`;
+  const progressFill = document.getElementById("progress-fill");
+  if (progressFill) progressFill.style.width = "0%";
+  const slideCounter = document.getElementById("slide-counter");
+  if (slideCounter) slideCounter.textContent = "0 / 0";
+
+  // Reset semua slide card
+  document.querySelectorAll(".slide-card").forEach(el => {
+    el.classList.remove("live", "active");
+    const badge = el.querySelector(".slide-section-tag");
+    if (badge) badge.classList.remove("live-badge");
+  });
+}
+
+// ══════════════════════════════════════════════
+// KEYBOARD SHORTCUTS
+// ══════════════════════════════════════════════
+document.addEventListener("keydown", e => {
+  if (document.getElementById("search-input") === document.activeElement) return;
+
+  switch (e.key) {
+    case "ArrowRight":
+    case " ":
+      e.preventDefault();
+      if (currentSlideIdx < slides.length - 1) goToSlide(currentSlideIdx + 1);
+      break;
+    case "ArrowLeft":
+      e.preventDefault();
+      if (currentSlideIdx > 0) goToSlide(currentSlideIdx - 1);
+      break;
+    case "ArrowDown":
+      e.preventDefault();
+      if (currentSongIdx < songs.length - 1) { selectSong(currentSongIdx + 1); }
+      break;
+    case "ArrowUp":
+      e.preventDefault();
+      if (currentSongIdx > 0) selectSong(currentSongIdx - 1);
+      break;
+    case "Escape":
+      e.preventDefault();
+      clearOverlay();
+      break;
+    case "Home":
+      e.preventDefault();
+      if (slides.length) goToSlide(0);
+      break;
+    case "End":
+      e.preventDefault();
+      if (slides.length) goToSlide(slides.length - 1);
+      break;
+  }
+});
+
+// ══════════════════════════════════════════════
+// SEARCH
+// ══════════════════════════════════════════════
+document.getElementById("search-input").addEventListener("input", function() {
+  const q = this.value.toLowerCase().trim();
+  const filtered = q
+    ? songs.filter((s, i) => {
+        s._origIdx = i;
+        return s.title.toLowerCase().includes(q) || (s.author || "").toLowerCase().includes(q);
+      })
+    : songs.map((s, i) => { s._origIdx = i; return s; });
+
+  const container = document.getElementById("song-list");
+  if (!filtered.length) {
+    container.innerHTML = `<div class="empty-state">
+      <div class="empty-icon">🔍</div>
+      <p>Tidak ada lagu yang cocok.</p>
+    </div>`;
+    return;
+  }
+
+  container.innerHTML = filtered.map((song, idx) => `
+    <div class="song-item ${currentSongIdx === (song._origIdx ?? idx) ? 'active' : ''}"
+         data-idx="${song._origIdx ?? idx}" onclick="selectSong(${song._origIdx ?? idx})">
+      <span class="song-number">${(song._origIdx ?? idx) + 1}</span>
+      <span class="song-name" title="${escHtml(song.title)}">${highlightMatch(escHtml(song.title), q)}</span>
+    </div>
+  `).join("");
+});
+
+function highlightMatch(text, q) {
+  if (!q) return text;
+  return text.replace(new RegExp(`(${escRegex(q)})`, "gi"),
+    "<mark style='background:rgba(108,99,255,0.35);color:inherit;border-radius:2px;'>$1</mark>"
+  );
+}
+
+// ══════════════════════════════════════════════
+// BUTTON HANDLERS
+// ══════════════════════════════════════════════
+document.getElementById("btn-reimport").onclick = () => {
+  document.getElementById("import-screen").classList.remove("hidden");
+  document.getElementById("import-screen").style.display = "flex";
+  document.getElementById("control-panel").style.display = "none";
+};
+
+document.getElementById("btn-clear-live").onclick = clearOverlay;
+
+document.getElementById("btn-next-slide").onclick = () => {
+  if (currentSlideIdx < slides.length - 1) goToSlide(currentSlideIdx + 1);
+};
+document.getElementById("btn-prev-slide").onclick = () => {
+  if (currentSlideIdx > 0) goToSlide(currentSlideIdx - 1);
+};
+
+document.getElementById("btn-fullscreen").onclick = () => {
+  if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+  else document.exitFullscreen();
+};
+
+// ══════════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════════
+let toastTimer = null;
+function showToast(msg, type = "info") {
+  const el = document.getElementById("toast");
+  const icons = { success: "✅", error: "❌", warning: "⚠️", info: "ℹ️" };
+  el.textContent = `${icons[type] || "ℹ️"} ${msg}`;
+  el.classList.add("show");
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove("show"), 3500);
+}
+
+// ══════════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════════
+function escHtml(str) {
+  return String(str || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+function escRegex(str) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+</script>
+
+</body>
+</html>
