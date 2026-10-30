@@ -803,17 +803,25 @@
     
     function handleLtFontInput() {
       const v = Number(document.getElementById('font-size-lt-val').value || 30);
-      const currentIsBible = currentItem ? getIsBibleItem(currentItem) : false;
-      const isScheduleSong = (sidebarTab === 'schedule' && currentIsBible === false);
+      const targetTab = (typeof getEffectiveSettingsTargetTab === 'function') ? getEffectiveSettingsTargetTab() : sidebarTab;
+      if (targetTab === 'songs') {
+        ltFontSongs = v;
+      } else if (targetTab === 'bible') {
+        ltFontBible = v;
+      } else {
+        const currentIsBible = currentItem ? getIsBibleItem(currentItem) : false;
+        if (currentIsBible) ltFontBible = v;
+        else ltFontSongs = v;
+      }
       if (isLive && liveKind) {
         if (liveKind === 'bible') ltFontBible = v;
         else ltFontSongs = v;
-      } else if (sidebarTab === 'bible') {
-        ltFontBible = v;
-      } else if (sidebarTab === 'songs' || isScheduleSong) {
-        ltFontSongs = v;
-      } else if (sidebarTab === 'schedule' && currentIsBible) {
-        ltFontBible = v;
+      }
+      if (typeof saveProjectionSettingsProfileForTab === 'function') {
+        saveProjectionSettingsProfileForTab(targetTab);
+        if (targetTab === 'schedule' || targetTab === 'songs') {
+          saveProjectionSettingsProfileForTab('songs');
+        }
       }
       onAnyControlChange();
     }

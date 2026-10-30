@@ -660,11 +660,19 @@
     function setRatio(r) {
       if (r === 'custom') r = 'full';
       const prevRatio = activeRatio;
+      activeRatio = r;
       const useFocusedWorkspaceControls = isFocusedWorkspaceMode();
       if (useFocusedWorkspaceControls) {
         saveFocusedWorkspaceControlsForTab(sidebarTab);
+        if (sidebarTab === 'schedule' || sidebarTab === 'songs') {
+          if (focusedWorkspaceControlsByTab && focusedWorkspaceControlsByTab['songs']) {
+            focusedWorkspaceControlsByTab['songs'].activeRatio = r;
+          }
+          if (focusedWorkspaceControlsByTab && focusedWorkspaceControlsByTab['schedule']) {
+            focusedWorkspaceControlsByTab['schedule'].activeRatio = r;
+          }
+        }
       }
-      activeRatio = r;
       document.getElementById('ratio-full').classList.toggle('active', r === 'full');
       document.getElementById('ratio-lt').classList.toggle('active', r === '16-9');
       document.getElementById('ratio-custom').classList.toggle('active', r === 'custom');
@@ -687,6 +695,15 @@
       handleSongFullFontState({ suppressLiveUpdate: true });
       updateModeBackgroundLinkUi();
       updateWorkspaceFontSizeControl();
+      if (typeof saveProjectionSettingsProfileForTab === 'function') {
+        saveProjectionSettingsProfileForTab(getEffectiveSettingsTargetTab());
+        if (sidebarTab === 'schedule' || sidebarTab === 'songs') {
+          const songsProfile = (typeof getProjectionSettingsSnapshotForTab === 'function') ? getProjectionSettingsSnapshotForTab('songs') : null;
+          if (songsProfile) songsProfile.activeRatio = r;
+          const schedProfile = (typeof getProjectionSettingsSnapshotForTab === 'function') ? getProjectionSettingsSnapshotForTab('schedule') : null;
+          if (schedProfile) schedProfile.activeRatio = r;
+        }
+      }
       onAnyControlChange();
     }
 
@@ -1667,7 +1684,11 @@
         populateLanguageSelect();
         setLanguage(currentLanguage, { silent: true });
         if (typeof setSettingsTargetTab === 'function') {
-            setSettingsTargetTab('bible', { silent: true });
+          const currentIsBible = currentItem ? (typeof getIsBibleItem === 'function' && getIsBibleItem(currentItem)) : false;
+          const initialTab = (sidebarTab === 'schedule')
+            ? (currentIsBible ? 'bible' : 'songs')
+            : ((sidebarTab === 'songs' || sidebarTab === 'media') ? sidebarTab : 'bible');
+          setSettingsTargetTab(initialTab, { silent: true });
         }
       } else if (id === 'newSongModal') {
         resetNewSongLookupState({ keepInputs: false });

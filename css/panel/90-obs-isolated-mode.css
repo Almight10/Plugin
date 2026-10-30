@@ -381,3 +381,379 @@
       align-items: center !important;
       justify-content: center !important;
     }
+
+
+/* ===== RESPONSIVE SETTINGS & MODALS FOR OBS DOCK & COMPACT VIEWPORTS ===== */
+@media (max-width: 650px), (max-height: 600px) {
+  .modal-overlay {
+    padding: 6px !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+  .modal-content,
+  #settingsModal .modal-content,
+  #styleEditorModal .modal-content,
+  #textEditModal .modal-content,
+  #newSongModal .modal-content,
+  #ewImportModal .modal-content,
+  #autoLyricsModal .modal-content {
+    width: 98vw !important;
+    max-width: 98vw !important;
+    height: 94vh !important;
+    max-height: 94vh !important;
+    margin: auto !important;
+    padding: 0 !important;
+    border-radius: 12px !important;
+    box-sizing: border-box !important;
+  }
+}
+
+/* Also enforce for body.obs-isolated unconditionally */
+body.obs-isolated .modal-overlay {
+  padding: 6px !important;
+}
+body.obs-isolated .modal-content,
+body.obs-isolated #settingsModal .modal-content,
+body.obs-isolated #styleEditorModal .modal-content,
+body.obs-isolated #textEditModal .modal-content,
+body.obs-isolated #newSongModal .modal-content,
+body.obs-isolated #ewImportModal .modal-content,
+body.obs-isolated #autoLyricsModal .modal-content {
+  width: 98vw !important;
+  max-width: 98vw !important;
+  height: 94vh !important;
+  max-height: 94vh !important;
+  margin: auto !important;
+  padding: 0 !important;
+  border-radius: 12px !important;
+  box-sizing: border-box !important;
+}
+
+/* ===== SETTINGS MODAL RESPONSIVE SINGLE-COLUMN + HORIZONTAL CHIPS ===== */
+@media (max-width: 650px), (max-height: 600px) {
+  .settings-modal-title {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    padding: 6px 10px !important;
+    gap: 4px 8px !important;
+    height: auto !important;
+    min-height: auto !important;
+    flex-shrink: 0 !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  }
+  .settings-modal-title > span[data-i18n] {
+    font-size: 13px !important;
+    font-weight: 700 !important;
+  }
+  .settings-modal-title #settings-target-switch {
+    order: 4 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 4px 0 0 0 !important;
+    display: flex !important;
+    height: 28px !important;
+  }
+  .settings-modal-title #settings-target-switch .seg-btn {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    padding: 3px 2px !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    text-align: center !important;
+    height: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+  .settings-modal-title .settings-close-btn {
+    padding: 2px 8px !important;
+    font-size: 14px !important;
+    height: 26px !important;
+    line-height: 1 !important;
+  }
+
+  .sm-body {
+    display: flex !important;
+    flex-direction: column !important;
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+  }
+  .sm-sidebar {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    height: auto !important;
+    flex: 0 0 auto !important;
+    display: flex !important;
+    flex-direction: row !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    white-space: nowrap !important;
+    border-right: none !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12) !important;
+    padding: 5px 6px !important;
+    gap: 4px !important;
+    background: rgba(15, 23, 42, 0.98) !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: thin !important;
+  }
+  .sm-sidebar::-webkit-scrollbar {
+    height: 3px !important;
+  }
+  .sm-sidebar-item {
+    flex: 0 0 auto !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+    padding: 5px 9px !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    border-radius: 6px !important;
+    margin: 0 !important;
+    white-space: nowrap !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    color: var(--text-secondary, #94a3b8) !important;
+  }
+  .sm-sidebar-item.active {
+    background: rgba(59, 130, 246, 0.25) !important;
+    border-color: rgba(59, 130, 246, 0.6) !important;
+    color: #60a5fa !important;
+  }
+  .sm-sidebar-item.active::before {
+    display: none !important;
+  }
+  .sm-sidebar-item .cat-icon {
+    width: 12px !important;
+    height: 12px !important;
+  }
+  .sm-content {
+    width: 100% !important;
+    min-width: 0 !important;
+    flex: 1 1 auto !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    padding: 8px 10px 30px !important;
+    box-sizing: border-box !important;
+  }
+  .sm-panel-title {
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    padding: 4px 0 8px !important;
+  }
+  .sm-tab-panel .settings-category-content {
+    padding: 0 !important;
+  }
+  .settings-row {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    width: 100% !important;
+    margin-top: 8px !important;
+  }
+  .settings-row.keep-two-cols {
+    flex-direction: column !important;
+  }
+  .paired-stepper-group {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+  .settings-field {
+    width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+  .settings-select,
+  .settings-input,
+  .settings-slider,
+  .numeric-stepper-wrap {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .segmented-picker {
+    width: 100% !important;
+    max-width: 100% !important;
+    display: flex !important;
+  }
+  .segmented-picker .seg-btn {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    padding: 4px 2px !important;
+    font-size: 11px !important;
+    text-align: center !important;
+  }
+}
+
+/* Also enforce for body.obs-isolated unconditionally */
+body.obs-isolated .settings-modal-title {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  padding: 6px 10px !important;
+  gap: 4px 8px !important;
+  height: auto !important;
+  min-height: auto !important;
+  flex-shrink: 0 !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+body.obs-isolated .settings-modal-title > span[data-i18n] {
+  font-size: 13px !important;
+  font-weight: 700 !important;
+}
+body.obs-isolated .settings-modal-title #settings-target-switch {
+  order: 4 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 4px 0 0 0 !important;
+  display: flex !important;
+  height: 28px !important;
+}
+body.obs-isolated .settings-modal-title #settings-target-switch .seg-btn {
+  flex: 1 1 0 !important;
+  min-width: 0 !important;
+  padding: 3px 2px !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  text-align: center !important;
+  height: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+body.obs-isolated .settings-modal-title .settings-close-btn {
+  padding: 2px 8px !important;
+  font-size: 14px !important;
+  height: 26px !important;
+  line-height: 1 !important;
+}
+body.obs-isolated .sm-body {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+body.obs-isolated .sm-sidebar {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  height: auto !important;
+  flex: 0 0 auto !important;
+  display: flex !important;
+  flex-direction: row !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  white-space: nowrap !important;
+  border-right: none !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12) !important;
+  padding: 5px 6px !important;
+  gap: 4px !important;
+  background: rgba(15, 23, 42, 0.98) !important;
+  -webkit-overflow-scrolling: touch !important;
+  scrollbar-width: thin !important;
+}
+body.obs-isolated .sm-sidebar::-webkit-scrollbar {
+  height: 3px !important;
+}
+body.obs-isolated .sm-sidebar-item {
+  flex: 0 0 auto !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  padding: 5px 9px !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  border-radius: 6px !important;
+  margin: 0 !important;
+  white-space: nowrap !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  color: var(--text-secondary, #94a3b8) !important;
+}
+body.obs-isolated .sm-sidebar-item.active {
+  background: rgba(59, 130, 246, 0.25) !important;
+  border-color: rgba(59, 130, 246, 0.6) !important;
+  color: #60a5fa !important;
+}
+body.obs-isolated .sm-sidebar-item.active::before {
+  display: none !important;
+}
+body.obs-isolated .sm-sidebar-item .cat-icon {
+  width: 12px !important;
+  height: 12px !important;
+}
+body.obs-isolated .sm-content {
+  width: 100% !important;
+  min-width: 0 !important;
+  flex: 1 1 auto !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  padding: 8px 10px 30px !important;
+  box-sizing: border-box !important;
+}
+body.obs-isolated .sm-panel-title {
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  padding: 4px 0 8px !important;
+}
+body.obs-isolated .sm-tab-panel .settings-category-content {
+  padding: 0 !important;
+}
+body.obs-isolated .settings-row {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+  width: 100% !important;
+  margin-top: 8px !important;
+}
+body.obs-isolated .settings-row.keep-two-cols {
+  flex-direction: column !important;
+}
+body.obs-isolated .paired-stepper-group {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+  width: 100% !important;
+}
+body.obs-isolated .settings-field {
+  width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+body.obs-isolated .settings-select,
+body.obs-isolated .settings-input,
+body.obs-isolated .settings-slider,
+body.obs-isolated .numeric-stepper-wrap {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+body.obs-isolated .segmented-picker {
+  width: 100% !important;
+  max-width: 100% !important;
+  display: flex !important;
+}
+body.obs-isolated .segmented-picker .seg-btn {
+  flex: 1 1 0 !important;
+  min-width: 0 !important;
+  padding: 4px 2px !important;
+  font-size: 11px !important;
+  text-align: center !important;
+}
+
+/* ===== EDIT TEXT MODAL RESPONSIVE ===== */
+@media (max-width: 650px) {
+  #textEditModal .modal-content {
+    padding: 10px 12px !important;
+    gap: 8px !important;
+  }
+}
+body.obs-isolated #textEditModal .modal-content {
+  padding: 10px 12px !important;
+  gap: 8px !important;
+}
