@@ -14,6 +14,12 @@
       });
       saveToStorageDebounced();
       updateButtonView();
+      if (typeof updateFocusedScheduleSlideUi === 'function') {
+        updateFocusedScheduleSlideUi();
+      }
+      if (typeof renderSongs === 'function') {
+        renderSongs();
+      }
       setLtFontInputValue(getEffectiveLtFont());
       handleSongFullFontState();
       if (isVmixMode()) {

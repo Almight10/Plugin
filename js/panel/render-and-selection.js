@@ -712,15 +712,33 @@
       displayList.forEach((s, i) => {
         if (q && !getItemSearchableText(s).includes(q)) return;
         const itemIndex = (sidebarTab === 'bible' && displayIndices) ? displayIndices[i] : i;
+        const isScheduleUi = (sidebarTab === 'schedule' && buttonContextTab === 'schedule');
+        const isThisItemLive = isLive && livePointer && (
+          (isScheduleUi && livePointer.source === 'schedule' && livePointer.index === i) ||
+          (buttonContextTab === 'songs' && livePointer.kind === 'songs' && livePointer.source !== 'schedule' && livePointer.index === itemIndex) ||
+          (buttonContextTab === 'bible' && livePointer.kind === 'bible' && livePointer.source !== 'schedule' && livePointer.index === itemIndex && livePointer.version === activeBibleVersion)
+        );
+
         const div = document.createElement('div');
-        div.className = 'song-item' + (currentItem === s ? ' active' : '');
+        div.className = 'song-item' + (currentItem === s ? ' active' : '') + (isThisItemLive ? ' live-item' : '');
         div.dataset.index = String(itemIndex);
         const left = document.createElement('span');
+        left.style.display = 'inline-flex';
+        left.style.alignItems = 'center';
+        left.style.minWidth = '0';
+        left.style.overflow = 'hidden';
+        left.style.textOverflow = 'ellipsis';
+        left.style.whiteSpace = 'nowrap';
         left.textContent = s.title;
+        if (isThisItemLive) {
+          const liveBadge = document.createElement('span');
+          liveBadge.className = 'song-item-live-badge';
+          liveBadge.textContent = '● LIVE';
+          left.appendChild(liveBadge);
+        }
         const right = document.createElement('div');
         right.style.display = 'flex';
         right.style.alignItems = 'center';
-        const isScheduleUi = (sidebarTab === 'schedule' && buttonContextTab === 'schedule');
         if (isScheduleUi) {
           const handle = document.createElement('span');
           handle.className = 'drag-handle'; handle.textContent = '☰';

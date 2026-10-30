@@ -1651,11 +1651,17 @@
       if (lineCursor > 0) {
         lineCursor--;
         updateButtonView();
+        if (typeof updateFocusedScheduleSlideUi === 'function') {
+          updateFocusedScheduleSlideUi(lineCursor);
+        }
         if (isLive && livePointer) {
           liveLineCursor = lineCursor;
           if (!pushLiveUpdate()) {
             projectLive(true);
           }
+        }
+        if (typeof renderSongs === 'function') {
+          renderSongs();
         }
         saveToStorageDebounced();
       }
@@ -1667,11 +1673,17 @@
       if (lineCursor < pages.length - 1) {
         lineCursor++;
         updateButtonView();
+        if (typeof updateFocusedScheduleSlideUi === 'function') {
+          updateFocusedScheduleSlideUi(lineCursor);
+        }
         if (isLive && livePointer) {
           liveLineCursor = lineCursor;
           if (!pushLiveUpdate()) {
             projectLive(true);
           }
+        }
+        if (typeof renderSongs === 'function') {
+          renderSongs();
         }
         saveToStorageDebounced();
       }
@@ -2331,17 +2343,27 @@
 
         const header = card.querySelector('.ew-slide-header');
         let badge = card.querySelector('.ew-slide-badge-live');
+        let prevBadge = card.querySelector('.ew-slide-badge-preview');
         const liveBtn = card.querySelector('.ew-slide-btn-live');
+        let ribbon = card.querySelector('.ew-slide-live-ribbon');
 
         if (isSlideLive) {
           card.classList.add('live');
+          if (prevBadge) prevBadge.remove();
           if (!badge && header) {
             badge = document.createElement('span');
             badge.className = 'ew-slide-badge-live';
-            badge.textContent = '● LIVE';
+            badge.textContent = '🔴 LIVE';
             const num = header.querySelector('.ew-slide-number');
             if (num) header.insertBefore(badge, num);
             else header.appendChild(badge);
+          }
+          if (!ribbon) {
+            ribbon = document.createElement('div');
+            ribbon.className = 'ew-slide-live-ribbon';
+            ribbon.textContent = '🟢 SEDANG TAYANG DI OBS';
+            const body = card.querySelector('.ew-slide-body');
+            if (body) card.insertBefore(ribbon, body);
           }
           if (liveBtn) {
             liveBtn.classList.add('active-live');
@@ -2350,12 +2372,36 @@
         } else {
           card.classList.remove('live');
           if (badge) badge.remove();
+          if (ribbon) ribbon.remove();
+          if (isSelected) {
+            if (!prevBadge && header) {
+              prevBadge = document.createElement('span');
+              prevBadge.className = 'ew-slide-badge-preview';
+              prevBadge.textContent = '👁 PREVIEW';
+              const num = header.querySelector('.ew-slide-number');
+              if (num) header.insertBefore(prevBadge, num);
+              else header.appendChild(prevBadge);
+            }
+          } else {
+            if (prevBadge) prevBadge.remove();
+          }
           if (liveBtn) {
             liveBtn.classList.remove('active-live');
             liveBtn.textContent = '▶ Tampilkan (Go Live)';
           }
         }
       });
+
+      const topbarStatus = panel.querySelector('.ew-topbar-live-status');
+      if (topbarStatus) {
+        if (isItemLive) {
+          topbarStatus.className = 'ew-topbar-live-status live';
+          topbarStatus.textContent = `🔴 TAYANG: Slide ${liveLineCursor + 1}`;
+        } else {
+          topbarStatus.className = 'ew-topbar-live-status preview';
+          topbarStatus.textContent = `👁 PREVIEW: Slide ${curLine + 1}`;
+        }
+      }
 
       if (Number.isFinite(targetSlideIdx)) {
         const targetCard = grid.querySelector(`.ew-slide-card[data-slide-index="${targetSlideIdx}"]`);
@@ -2502,9 +2548,10 @@
                title="Klik untuk memilih slide. Klik ganda untuk langsung Live.">
             <div class="ew-slide-header">
               <span class="ew-slide-tag">${safeEsc(displaySection)}</span>
-              ${isSlideLive ? '<span class="ew-slide-badge-live">● LIVE</span>' : ''}
+              ${isSlideLive ? '<span class="ew-slide-badge-live">🔴 LIVE</span>' : (isSelected ? '<span class="ew-slide-badge-preview">👁 PREVIEW</span>' : '')}
               <span class="ew-slide-number">#${sIdx + 1}</span>
             </div>
+            ${isSlideLive ? '<div class="ew-slide-live-ribbon">🟢 SEDANG TAYANG DI OBS</div>' : ''}
             <div class="ew-slide-body">
               <div class="ew-slide-text">${displayHtml || '<span style="color:#64748b;font-style:italic;">(Slide Kosong / Instrumental)</span>'}</div>
             </div>
@@ -2526,6 +2573,7 @@
             <div style="display:flex;align-items:center;gap:6px;min-width:0;flex:1 1 auto;overflow:hidden;">
               <span style="background:rgba(108,99,255,0.25);color:#a5b4fc;border:1px solid rgba(108,99,255,0.45);font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;white-space:nowrap;">📋 ${activeIdx + 1}/${entries.length}</span>
               <div style="font-size:11.5px;font-weight:700;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${itemTitle}">${itemTitle}</div>
+              <span class="ew-topbar-live-status ${isItemLive ? 'live' : 'preview'}">${isItemLive ? `🔴 TAYANG: Slide ${liveLineCursor + 1}` : `👁 PREVIEW: Slide ${curLineCursor + 1}`}</span>
             </div>
             <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
               <div class="workspace-font-size-control" style="display:inline-flex;align-items:center;height:24px;border-radius:4px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);overflow:hidden;" title="Ukuran Font Teks / Lirik">

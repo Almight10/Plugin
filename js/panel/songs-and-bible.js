@@ -1306,6 +1306,12 @@
         delayBibleBgUntilVerse = false;
       }
       pushLiveUpdate(); saveToStorageDebounced(); updateButtonView(); setLtFontInputValue(getEffectiveLtFont());
+      if (typeof updateFocusedScheduleSlideUi === 'function') {
+        updateFocusedScheduleSlideUi(lineCursor);
+      }
+      if (typeof renderSongs === 'function') {
+        renderSongs();
+      }
       if (isScheduleItem && !window.__suppressScheduleAdvance) {
         const isFocusedSchedule = (typeof isFocusedWorkspaceMode === 'function' && isFocusedWorkspaceMode() && sidebarTab === 'schedule');
         const setlistBehavior = (typeof getSetlistSettingsSnapshot === 'function')
