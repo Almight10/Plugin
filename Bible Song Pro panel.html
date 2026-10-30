@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Bible Song Pro - Control Panel</title>
-  <link rel="stylesheet" href="css/panel/00-panel-base.css?v=2.2.4">
+  <link rel="stylesheet" href="css/panel/00-panel-base.css?v=2.2.5">
   <link rel="stylesheet" href="css/panel/20-annotate-tools.css">
   <link rel="stylesheet" href="css/panel/21-ai-helper-toolbar.css">
   <link rel="stylesheet" href="css/panel/30-media-workspace.css">
@@ -302,6 +302,144 @@
     #btn-next:active {
       transform: scale(0.95) !important;
     }
+
+    /* ===== OBS DOCK MODE & RESPONSIVE COMPACT LAYOUT FIX ===== */
+    /* Collapsible main-panel-stacks */
+    .main-panel-stacks.stacks-collapsed {
+      display: none !important;
+    }
+
+    #btn-toggle-panel-stacks {
+      flex-shrink: 0 !important;
+      min-width: 32px !important;
+      width: 32px !important;
+      height: 32px !important;
+      transition: background 0.15s ease !important;
+    }
+
+    #btn-toggle-panel-stacks.active {
+      background: #2563eb !important;
+      border-color: rgba(255, 255, 255, 0.4) !important;
+      box-shadow: 0 0 8px rgba(37, 99, 235, 0.5) !important;
+    }
+
+    /* Setlist Mode: Hide header-toolbar to give 100% height to slide cards */
+    body[data-sidebar-tab="schedule"] .header-toolbar,
+    body[data-sidebar-tab="schedule"] #main > .header-toolbar {
+      display: none !important;
+    }
+
+    /* OBS dock mode optimizations */
+    body.obs-isolated #page-nav-bar,
+    body.obs-isolated .page-nav-tool-left,
+    body.obs-isolated .page-nav-primary {
+      display: none !important;
+    }
+
+    body.obs-isolated #app-topbar {
+      height: 32px !important;
+      min-height: 32px !important;
+      padding: 2px 8px !important;
+    }
+
+    body.obs-isolated #app-topbar-title {
+      font-size: 11px !important;
+    }
+
+    body.obs-isolated #app-topbar .btn {
+      padding: 3px 6px !important;
+      font-size: 10px !important;
+      height: 24px !important;
+    }
+
+    body.obs-isolated #sidebar {
+      width: 155px !important;
+      min-width: 120px !important;
+      max-width: 220px !important;
+    }
+
+    body.obs-isolated .live-controls {
+      padding: 6px 8px !important;
+    }
+
+    body.obs-isolated .nav-row {
+      gap: 5px !important;
+    }
+
+    body.obs-isolated .nav-row button {
+      height: 30px !important;
+      font-size: 11px !important;
+    }
+
+    body.obs-isolated #btn-project-live {
+      min-width: 90px !important;
+      padding: 0 8px !important;
+    }
+
+    body.obs-isolated #btn-prev,
+    body.obs-isolated #btn-next,
+    body.obs-isolated #btn-toggle-panel-stacks {
+      width: 30px !important;
+      min-width: 30px !important;
+      height: 30px !important;
+    }
+
+    body.obs-isolated .ew-slide-grid {
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)) !important;
+      gap: 8px !important;
+      padding: 8px !important;
+    }
+
+    body.obs-isolated .ew-slide-card {
+      min-height: 85px !important;
+      border-radius: 6px !important;
+    }
+
+    body.obs-isolated .ew-slide-header {
+      padding: 4px 6px !important;
+      font-size: 10px !important;
+    }
+
+    body.obs-isolated .ew-slide-body {
+      padding: 6px !important;
+    }
+
+    body.obs-isolated .ew-slide-text {
+      font-size: 11px !important;
+      line-height: 1.3 !important;
+    }
+
+    body.obs-isolated .ew-slide-footer {
+      padding: 3px 6px !important;
+    }
+
+    body.obs-isolated .ew-slide-btn-live {
+      padding: 3px 6px !important;
+      font-size: 10px !important;
+    }
+
+    /* Responsive adjustments for any narrow window (< 650px) */
+    @media (max-width: 650px) {
+      #page-nav-bar {
+        display: none !important;
+      }
+      #sidebar {
+        width: 150px !important;
+        min-width: 115px !important;
+      }
+      .ew-slide-grid {
+        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)) !important;
+        gap: 8px !important;
+        padding: 8px !important;
+      }
+      .ew-slide-card {
+        min-height: 85px !important;
+      }
+      .ew-slide-text {
+        font-size: 11px !important;
+      }
+    }
+
 
   </style>
 </head>
@@ -916,6 +1054,7 @@
           </div>
           <button class="btn" id="btn-prev" style="min-width:0;padding:0 10px" onclick="prevSlide()">←</button>
           <button class="btn" id="btn-next" style="min-width:0;padding:0 10px" onclick="nextSlide()">→</button>
+          <button class="btn" id="btn-toggle-panel-stacks" type="button" onclick="toggleMainPanelStacks()" title="Pengaturan Tampilan (Lines, Mode, Background)" style="flex-shrink:0;min-width:32px;width:32px;height:32px;padding:0;display:inline-flex;align-items:center;justify-content:center;background:#334155;color:#fff;border-radius:6px;border:1px solid rgba(255,255,255,0.25);font-size:14px;cursor:pointer;">⚙</button>
         </div>
         <div id="vmix-status-panel" style="display:none;border-top:1px solid var(--border);padding-top:12px;margin-top:12px">
           <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
@@ -4206,12 +4345,12 @@
   <script src="lib/sql-wasm.js"></script>
   <script src="lib/sql-wasm-binary.js"></script>
   <script src="data/easyworship_songs_1410.js"></script>
-  <script src="js/panel/easyworship-import.js?v=2.2.4"></script>
+  <script src="js/panel/easyworship-import.js?v=2.2.5"></script>
   <script src="js/panel/state-and-storage.js"></script>
   <script src="js/panel/panel-app-core.js"></script>
   <script src="js/panel/reference-localization-theme.js"></script>
   <script src="js/panel/vmix-and-translation.js"></script>
-  <script src="js/panel/songs-and-bible.js?v=2.2.4"></script>
+  <script src="js/panel/songs-and-bible.js?v=2.2.5"></script>
   <script src="js/panel/render-and-selection.js"></script>
   <script src="js/panel/media-and-background.js"></script>
   <script src="js/panel/output-and-streaming.js"></script>
@@ -4221,7 +4360,7 @@
   <script src="js/panel/source-runtime-and-promixer.js"></script>
   <script src="js/panel/program-display-and-transform.js"></script>
   <script src="js/panel/recording-and-livestream-tools.js"></script>
-  <script src="js/panel/workspace-and-editor-tools.js?v=2.2.4"></script>
+  <script src="js/panel/workspace-and-editor-tools.js?v=2.2.5"></script>
   <script src="js/panel/app-commands-and-shortcuts.js"></script>
   <script src="js/panel/settings-and-controls.js"></script>
   <script src="js/panel/sidebar-and-workspace.js"></script>

@@ -2274,6 +2274,7 @@
     }
 
     function isFocusedWorkspaceMode() {
+      if (typeof sidebarTab !== 'undefined' && sidebarTab === 'schedule') return true;
       return normalizeWorkspaceLayoutMode(workspaceLayoutMode) === 'focused';
     }
 
@@ -2645,7 +2646,7 @@
       }
       const editorContainer = document.getElementById('editor-container');
       const focusedPanel = document.getElementById('focused-main-panel');
-      const isScheduleFocused = mode === 'focused' && sidebarTab === 'schedule';
+      const isScheduleFocused = (sidebarTab === 'schedule') || (mode === 'focused');
       if (editorContainer) editorContainer.style.display = isScheduleFocused ? 'none' : 'flex';
       if (focusedPanel) focusedPanel.style.display = isScheduleFocused ? 'flex' : 'none';
       if (mode === 'focused' && sidebarTab !== 'songs' && editorMode !== 'btn') {
@@ -2854,7 +2855,45 @@
       }
       updateSidebarToggleTooltip();
       positionSidebarQuickActions();
+      if (typeof window.syncMainPanelStacksUi === 'function') window.syncMainPanelStacksUi();
     }
+
+    
+    window.toggleMainPanelStacks = function() {
+      const stacks = document.querySelector('.main-panel-stacks');
+      const btn = document.getElementById('btn-toggle-panel-stacks');
+      if (!stacks) return;
+      const isCollapsed = stacks.classList.toggle('stacks-collapsed');
+      if (btn) {
+        btn.classList.toggle('active', !isCollapsed);
+        btn.title = isCollapsed ? 'Buka Pengaturan Tampilan (Lines, Mode, Background)' : 'Tutup Pengaturan Tampilan';
+      }
+      try {
+        localStorage.setItem('panelStacksCollapsed', isCollapsed ? '1' : '0');
+      } catch (_) {}
+    };
+
+    window.syncMainPanelStacksUi = function() {
+      const stacks = document.querySelector('.main-panel-stacks');
+      const btn = document.getElementById('btn-toggle-panel-stacks');
+      if (!stacks) return;
+      let shouldCollapse = false;
+      try {
+        const saved = localStorage.getItem('panelStacksCollapsed');
+        if (saved != null) {
+          shouldCollapse = (saved === '1');
+        } else {
+          shouldCollapse = document.body.classList.contains('obs-isolated') || (window.innerWidth < 650);
+        }
+      } catch (_) {
+        shouldCollapse = false;
+      }
+      stacks.classList.toggle('stacks-collapsed', shouldCollapse);
+      if (btn) {
+        btn.classList.toggle('active', !shouldCollapse);
+        btn.title = shouldCollapse ? 'Buka Pengaturan Tampilan (Lines, Mode, Background)' : 'Tutup Pengaturan Tampilan';
+      }
+    };
 
     function applySidebarLayoutMode(layout, opts = {}) {
       const persist = opts.persist !== false;

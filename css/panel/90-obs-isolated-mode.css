@@ -111,3 +111,101 @@
       z-index: 8 !important;
       flex-shrink: 0 !important;
     }
+
+    /* ===== OBS DOCK MODE OPTIMIZATIONS ===== */
+    .main-panel-stacks.stacks-collapsed {
+      display: none !important;
+    }
+
+    body[data-sidebar-tab="schedule"] .header-toolbar,
+    body[data-sidebar-tab="schedule"] #main > .header-toolbar {
+      display: none !important;
+    }
+
+    body.obs-isolated #page-nav-bar,
+    body.obs-isolated .page-nav-tool-left,
+    body.obs-isolated .page-nav-primary {
+      display: none !important;
+    }
+
+    body.obs-isolated #app-topbar {
+      height: 32px !important;
+      min-height: 32px !important;
+      padding: 2px 8px !important;
+    }
+
+    body.obs-isolated #app-topbar-title {
+      font-size: 11px !important;
+    }
+
+    body.obs-isolated #app-topbar .btn {
+      padding: 3px 6px !important;
+      font-size: 10px !important;
+      height: 24px !important;
+    }
+
+    body.obs-isolated #sidebar {
+      width: 155px !important;
+      min-width: 120px !important;
+      max-width: 220px !important;
+    }
+
+    body.obs-isolated .live-controls {
+      padding: 6px 8px !important;
+    }
+
+    body.obs-isolated .nav-row {
+      gap: 5px !important;
+    }
+
+    body.obs-isolated .nav-row button {
+      height: 30px !important;
+      font-size: 11px !important;
+    }
+
+    body.obs-isolated #btn-project-live {
+      min-width: 90px !important;
+      padding: 0 8px !important;
+    }
+
+    body.obs-isolated #btn-prev,
+    body.obs-isolated #btn-next,
+    body.obs-isolated #btn-toggle-panel-stacks {
+      width: 30px !important;
+      min-width: 30px !important;
+      height: 30px !important;
+    }
+
+    body.obs-isolated .ew-slide-grid {
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)) !important;
+      gap: 8px !important;
+      padding: 8px !important;
+    }
+
+    body.obs-isolated .ew-slide-card {
+      min-height: 85px !important;
+      border-radius: 6px !important;
+    }
+
+    body.obs-isolated .ew-slide-header {
+      padding: 4px 6px !important;
+      font-size: 10px !important;
+    }
+
+    body.obs-isolated .ew-slide-body {
+      padding: 6px !important;
+    }
+
+    body.obs-isolated .ew-slide-text {
+      font-size: 11px !important;
+      line-height: 1.3 !important;
+    }
+
+    body.obs-isolated .ew-slide-footer {
+      padding: 3px 6px !important;
+    }
+
+    body.obs-isolated .ew-slide-btn-live {
+      padding: 3px 6px !important;
+      font-size: 10px !important;
+    }

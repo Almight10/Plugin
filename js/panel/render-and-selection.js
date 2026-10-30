@@ -678,6 +678,7 @@
     function renderSongs() {
       const list = document.getElementById('song-list');
       if (!list) return;
+      const savedScrollTop = list.scrollTop;
       const qRaw = document.getElementById('song-search').value || "";
       const q = normalizeSearchText(qRaw);
       list.replaceChildren();
@@ -723,17 +724,42 @@
         if (isScheduleUi) {
           const handle = document.createElement('span');
           handle.className = 'drag-handle'; handle.textContent = '☰';
+          handle.style.cursor = 'grab';
+          handle.title = 'Tarik untuk mengubah urutan';
+          handle.onmousedown = () => { div.draggable = true; };
+          handle.onmouseup = () => { div.draggable = false; };
+          handle.ontouchstart = () => { div.draggable = true; };
+          handle.ontouchend = () => { div.draggable = false; };
           right.appendChild(handle);
           const del = document.createElement('span');
           del.style.cursor = 'pointer'; del.style.marginLeft = '12px'; del.textContent = '✕';
           del.onclick = (e) => { e.stopPropagation(); removeFromSet(i, e) };
           right.appendChild(del);
-          div.draggable = true;
-          div.addEventListener('dragstart', (e) => { dragIndex = i; div.classList.add('dragging') });
-          div.addEventListener('dragend', () => { dragIndex = null; div.classList.remove('dragging'); [...list.children].forEach(ch => ch.classList.remove('drop-target')) });
-          div.addEventListener('dragover', (e) => { e.preventDefault(); div.classList.add('drop-target') });
+          div.draggable = false;
+          div.addEventListener('dragstart', (e) => {
+            if (!div.draggable) { e.preventDefault(); return; }
+            dragIndex = i;
+            div.classList.add('dragging');
+          });
+          div.addEventListener('dragend', () => {
+            div.draggable = false;
+            dragIndex = null;
+            div.classList.remove('dragging');
+            [...list.children].forEach(ch => ch.classList.remove('drop-target'));
+          });
+          div.addEventListener('dragover', (e) => { e.preventDefault(); div.classList.add('drop-target'); });
           div.addEventListener('dragleave', () => div.classList.remove('drop-target'));
-          div.addEventListener('drop', (e) => { e.preventDefault(); div.classList.remove('drop-target'); if (dragIndex == null || dragIndex === i) return; const item = schedule.splice(dragIndex, 1)[0]; schedule.splice(i, 0, item); saveState(); saveToStorageDebounced(); renderSongs() });
+          div.addEventListener('drop', (e) => {
+            e.preventDefault();
+            div.classList.remove('drop-target');
+            div.draggable = false;
+            if (dragIndex == null || dragIndex === i) return;
+            const item = schedule.splice(dragIndex, 1)[0];
+            schedule.splice(i, 0, item);
+            saveState();
+            saveToStorageDebounced();
+            renderSongs();
+          });
         } else {
           const add = document.createElement('span');
           add.style.color = 'var(--success)'; add.style.marginRight = '12px'; add.style.cursor = 'pointer'; add.textContent = '+';
@@ -803,6 +829,9 @@
         frag.appendChild(div);
       });
       list.appendChild(frag);
+      if (Number.isFinite(savedScrollTop) && savedScrollTop > 0) {
+        list.scrollTop = savedScrollTop;
+      }
       list._navMirrorItems = navMirrorItems;
 
       if (navMirrorItems.length === 0 && sidebarTab === 'songs') {
