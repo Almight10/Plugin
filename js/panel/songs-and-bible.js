@@ -351,12 +351,31 @@
       // If item already has pre-parsed structured slides (e.g. from EasyWorship schedule or database)
       if (!isBible && item.slides && Array.isArray(item.slides) && item.slides.length > 0) {
         const pages = item.slides.map((s, idx) => {
-          const rawText = String(s.text || '').trim();
+          let sec = s.section;
+          let rawText = String(s.text || '').trim();
+          if (typeof window !== 'undefined' && typeof window.cleanSlideTextAndSection === 'function') {
+            const cleaned = window.cleanSlideTextAndSection(sec, rawText, idx);
+            sec = cleaned.section;
+            rawText = cleaned.text;
+          } else {
+            const l = rawText.split(/\r?\n/).map(x => x.trim()).filter(Boolean);
+            if (l.length > 1) {
+              const first = l[0];
+              if (/^\[?(?:reff|chorus|refrain|koor)\]?$/i.test(first)) {
+                if (!sec || /^Slide\s*\d+$/i.test(sec)) sec = 'Reff';
+                rawText = l.slice(1).join('\n');
+              } else if (/^\d+$/.test(first)) {
+                if (!sec || /^Slide\s*\d+$/i.test(sec)) sec = `Bait ${first}`;
+                rawText = l.slice(1).join('\n');
+              }
+            }
+            if (/^\[?reff\]?$/i.test(sec)) sec = 'Reff';
+          }
           const lines = rawText.split('\n');
           return {
             text: renderSongPageHtml(lines),
             raw: rawText,
-            tag: s.section || `Slide ${idx + 1}`
+            tag: sec || `Slide ${idx + 1}`
           };
         });
         return setBoundedCacheValue(ITEM_PAGES_CACHE, cacheKey, pages, ITEM_PAGES_CACHE_LIMIT);

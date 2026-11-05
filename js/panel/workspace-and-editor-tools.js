@@ -1287,10 +1287,14 @@
       const lineHeightInput = document.getElementById('line-height-full');
       if (!verseInput || !lineHeightInput) return false;
       songFullFontSnapshot = {
-        verse: Number(verseInput.value || DEFAULT_BIBLE_FULL_FONT),
-        lineHeight: Number(lineHeightInput.value || DEFAULT_BIBLE_FULL_LINE_HEIGHT)
+        verse: Number(verseInput.value || DEFAULT_SONG_FULL_FONT),
+        lineHeight: Number(lineHeightInput.value || DEFAULT_SONG_FULL_LINE_HEIGHT)
       };
-      verseInput.value = String(DEFAULT_SONG_FULL_FONT);
+      // Keep user's active configured font size, never force-reset to default
+      const currentVal = Number(verseInput.value);
+      if (!Number.isFinite(currentVal) || currentVal <= 0) {
+        verseInput.value = String(DEFAULT_SONG_FULL_FONT);
+      }
       lineHeightInput.value = String(DEFAULT_SONG_FULL_LINE_HEIGHT);
       updateSliderValue(lineHeightInput);
       updateSliderFill(lineHeightInput);
@@ -2483,13 +2487,45 @@
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
 
+      // Helper to clean leaked tags or verse numbers from text and capitalize Reff/Bait
+      const cleanSlide = (sec, txt, idx) => {
+        if (typeof window.cleanSlideTextAndSection === 'function') {
+          return window.cleanSlideTextAndSection(sec, txt, idx);
+        }
+        let s = String(sec || '').trim();
+        let t = String(txt != null ? txt : '').trim();
+        if (s.startsWith('[') && s.endsWith(']')) s = s.slice(1, -1).trim();
+        const l = t.split(/\r?\n/).map(x => x.trim()).filter(Boolean);
+        if (l.length > 1) {
+          const first = l[0];
+          if (/^\[?(?:reff|chorus|refrain|koor)\]?$/i.test(first)) {
+            if (!s || /^Slide\s*\d+$/i.test(s)) s = 'Reff';
+            t = l.slice(1).join('\n');
+          } else if (/^\[?(?:bait|verse)\s*(\d+)\]?$/i.test(first)) {
+            const m = first.match(/^\[?(?:bait|verse)\s*(\d+)\]?$/i);
+            if (!s || /^Slide\s*\d+$/i.test(s)) s = 'Bait ' + (m ? m[1] : '1');
+            t = l.slice(1).join('\n');
+          } else if (/^\d+$/.test(first)) {
+            if (!s || /^Slide\s*\d+$/i.test(s)) s = 'Bait ' + first;
+            t = l.slice(1).join('\n');
+          }
+        }
+        if (!s) s = `Slide ${idx + 1}`;
+        else if (/^\[?reff\]?$/i.test(s)) s = 'Reff';
+        else if (/^\[?chorus\s*(\d*)\]?$/i.test(s)) {
+          const m = s.match(/^\[?chorus\s*(\d*)\]?$/i);
+          s = m && m[1] ? `Reff ${m[1]}` : 'Reff';
+        }
+        return { section: s, text: t };
+      };
+
       // 1. Prioritas Utama: Ambil langsung dari activeItem.slides (dari impor EasyWorship / DB)
       let slides = [];
       if (activeItem && Array.isArray(activeItem.slides) && activeItem.slides.length > 0) {
-        slides = activeItem.slides.map((s, idx) => ({
-          section: s.section || `Slide ${idx + 1}`,
-          text: String(s.text != null ? s.text : '').trim()
-        }));
+        slides = activeItem.slides.map((s, idx) => {
+          const c = cleanSlide(s.section, s.text, idx);
+          return { section: c.section, text: c.text };
+        });
       }
 
       // 2. Jika belum ada slides, parse content terstruktur misal [Slide 1] atau [Bait 1]
@@ -2503,7 +2539,10 @@
             for (let k = 1; k < parts.length; k += 2) {
               const sec = parts[k].trim();
               const txt = (parts[k + 1] || '').trim();
-              if (txt) slides.push({ section: sec, text: txt });
+              if (txt) {
+                const c = cleanSlide(sec, txt, slides.length);
+                slides.push({ section: c.section, text: c.text });
+              }
             }
           }
         }
@@ -2516,9 +2555,10 @@
           slides = pages.map((p, i) => {
             const raw = String(p.raw || '').trim();
             const txt = String(p.text || '').replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '').trim();
+            const c = cleanSlide(p.tag, raw || txt || '', i);
             return {
-              section: p.tag || `Slide ${i + 1}`,
-              text: raw || txt || ''
+              section: c.section,
+              text: c.text
             };
           });
         }
@@ -2527,7 +2567,8 @@
       // 4. Fallback jika masih kosong
       if (!slides.length) {
         const fallbackRaw = String(activeItem.content || activeItem.text || activeItem.title || 'Slide').trim();
-        slides = [{ section: 'Slide 1', text: fallbackRaw }];
+        const c = cleanSlide('Slide 1', fallbackRaw, 0);
+        slides = [{ section: c.section, text: c.text }];
       }
 
       const isItemLive = isLive && livePointer &&
@@ -2581,7 +2622,7 @@
                 <button class="workspace-font-size-value" id="ew-font-size-val" type="button" onclick="stepWorkspaceFontSize(1)" style="height:24px;line-height:24px;padding:0 4px;background:none;border:none;color:#38bdf8;cursor:pointer;font-size:11px;font-weight:700;min-width:32px;">${Math.round(typeof getWorkspaceFontSizeValue === 'function' ? getWorkspaceFontSizeValue() : 40)}pt</button>
                 <button class="workspace-font-size-step" type="button" onclick="stepWorkspaceFontSize(1)" style="height:24px;line-height:24px;padding:0 5px;background:none;border:none;color:#fff;cursor:pointer;font-size:11px;">+</button>
               </div>
-              <button class="btn" type="button" onclick="openTextEditModal()" title="Edit Teks / Lirik" style="display:inline-flex;align-items:center;gap:2px;height:24px;padding:0 6px;font-size:11px;background:rgba(245,158,11,0.25);border:1px solid rgba(245,158,11,0.6);color:#F59E0B;border-radius:4px;cursor:pointer;font-weight:700;">
+              <button class="btn" type="button" onclick="openTextEditModal(schedule[${activeIdx}])" title="Edit Teks / Lirik" style="display:inline-flex;align-items:center;gap:2px;height:24px;padding:0 6px;font-size:11px;background:rgba(245,158,11,0.25);border:1px solid rgba(245,158,11,0.6);color:#F59E0B;border-radius:4px;cursor:pointer;font-weight:700;">
                 <span>✏️</span>
               </button>
               <button class="btn" type="button" onclick="openModal('settingsModal')" title="Pengaturan (Settings)" style="display:inline-flex;align-items:center;justify-content:center;height:24px;width:24px;min-width:24px;padding:0;background:#334155;color:#fff;border-radius:4px;border:1px solid rgba(255,255,255,0.2);cursor:pointer;font-size:12px;">⚙</button>

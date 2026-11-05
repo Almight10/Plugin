@@ -197,6 +197,71 @@
       .trim();
   }
 
+  // Helper: Normalize slide section tag and clean any leaked tag/verse-number from the lyric text
+  function cleanSlideTextAndSection(section, text, slideIndex = 0) {
+    let sec = String(section || '').trim();
+    let txt = String(text != null ? text : '').trim();
+
+    // 1. Strip enclosing brackets: [Reff] -> Reff, [Bait 1] -> Bait 1
+    if (sec.startsWith('[') && sec.endsWith(']')) {
+      sec = sec.slice(1, -1).trim();
+    }
+
+    // 2. Check if body text starts with a leaked section header or verse number
+    const lines = txt.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    if (lines.length > 1) {
+      const first = lines[0];
+      // Match [reff], reff, chorus, [chorus], refrain, koor
+      if (/^\[?(?:reff|chorus|refrain|koor)\]?$/i.test(first)) {
+        if (!sec || /^Slide\s*\d+$/i.test(sec)) sec = 'Reff';
+        txt = lines.slice(1).join('\n');
+      }
+      // Match [Bait 1], Bait 1, [Verse 1], Verse 1
+      else if (/^\[?(?:bait|verse)\s*(\d+)\]?$/i.test(first)) {
+        const m = first.match(/^\[?(?:bait|verse)\s*(\d+)\]?$/i);
+        if (!sec || /^Slide\s*\d+$/i.test(sec)) sec = 'Bait ' + (m ? m[1] : '1');
+        txt = lines.slice(1).join('\n');
+      }
+      // Match bare number "1", "2", etc.
+      else if (/^\d+$/.test(first)) {
+        if (!sec || /^Slide\s*\d+$/i.test(sec)) sec = 'Bait ' + first;
+        txt = lines.slice(1).join('\n');
+      }
+      // Match [Bridge], Bridge, [Jembatan], Jembatan
+      else if (/^\[?(?:bridge|jembatan)\]?$/i.test(first)) {
+        if (!sec || /^Slide\s*\d+$/i.test(sec)) sec = 'Bridge';
+        txt = lines.slice(1).join('\n');
+      }
+      // Match [Penutup], Penutup, Ending, Coda
+      else if (/^\[?(?:tag|coda|ending|penutup)\]?$/i.test(first)) {
+        if (!sec || /^Slide\s*\d+$/i.test(sec)) sec = 'Penutup';
+        txt = lines.slice(1).join('\n');
+      }
+    }
+
+    // 3. Normalize section name
+    if (!sec) {
+      sec = `Slide ${slideIndex + 1}`;
+    } else if (/^\[?reff\]?$/i.test(sec)) {
+      sec = 'Reff';
+    } else if (/^\[?chorus\s*(\d*)\]?$/i.test(sec)) {
+      const m = sec.match(/^\[?chorus\s*(\d*)\]?$/i);
+      sec = m && m[1] ? `Reff ${m[1]}` : 'Reff';
+    } else if (/^\[?refrain\]?$/i.test(sec)) {
+      sec = 'Reff';
+    } else if (/^\[?koor\]?$/i.test(sec)) {
+      sec = 'Koor';
+    } else if (/^\[?bait\s*(\d+)\]?$/i.test(sec)) {
+      const m = sec.match(/^\[?bait\s*(\d+)\]?$/i);
+      sec = `Bait ${m ? m[1] : '1'}`;
+    } else if (/^\[?verse\s*(\d+)\]?$/i.test(sec)) {
+      const m = sec.match(/^\[?verse\s*(\d+)\]?$/i);
+      sec = `Bait ${m ? m[1] : '1'}`;
+    }
+
+    return { section: sec, text: txt };
+  }
+
   // Parse raw text or RTF into structured slides
   function parseIntoSlides(rawText) {
     const plain = stripRtf(rawText);
@@ -206,13 +271,13 @@
     let slideNum = 1;
 
     const SECTION_PATTERNS = [
-      { re: /^(verse\s*\d*|bait\s*\d*)/i,         tag: 'verse'  },
-      { re: /^(chorus\s*\d*|refrain|reff|koor)/i, tag: 'chorus' },
-      { re: /^(bridge\s*\d*|jembatan)/i,          tag: 'bridge' },
-      { re: /^(tag\s*\d*|coda|ending|penutup)/i,  tag: 'tag'    },
-      { re: /^(intro\s*\d*|pembuka)/i,            tag: 'intro'  },
-      { re: /^(outro\s*\d*|akhir)/i,              tag: 'outro'  },
-      { re: /^(pre[- ]?chorus\s*\d*)/i,          tag: 'verse'  },
+      { re: /^\[?(?:verse\s*\d*|bait\s*\d*)\]?/i,         tag: 'verse'  },
+      { re: /^\[?(?:chorus\s*\d*|refrain|reff|koor)\]?/i, tag: 'chorus' },
+      { re: /^\[?(?:bridge\s*\d*|jembatan)\]?/i,          tag: 'bridge' },
+      { re: /^\[?(?:tag\s*\d*|coda|ending|penutup)\]?/i,  tag: 'tag'    },
+      { re: /^\[?(?:intro\s*\d*|pembuka)\]?/i,            tag: 'intro'  },
+      { re: /^\[?(?:outro\s*\d*|akhir)\]?/i,              tag: 'outro'  },
+      { re: /^\[?(?:pre[- ]?chorus\s*\d*)\]?/i,          tag: 'verse'  },
     ];
 
     for (const block of blocks) {
@@ -239,23 +304,20 @@
         bodyLines = lines.slice(1);
       }
 
-      if (bodyLines.length > 0) {
+      const bodyText = bodyLines.length > 0 ? bodyLines.join('\n') : (sectionFound ? firstLine : '');
+      if (bodyText) {
+        const cleaned = cleanSlideTextAndSection(section, bodyText, slides.length);
         slides.push({
-          section: section,
-          text: bodyLines.join('\n')
-        });
-        slideNum++;
-      } else if (sectionFound) {
-        slides.push({
-          section: section,
-          text: firstLine
+          section: cleaned.section,
+          text: cleaned.text
         });
         slideNum++;
       }
     }
 
     if (!slides.length && plain.trim()) {
-      slides.push({ section: 'Slide 1', text: plain.trim() });
+      const cleaned = cleanSlideTextAndSection('Slide 1', plain.trim(), 0);
+      slides.push({ section: cleaned.section, text: cleaned.text });
     }
 
     return slides;
@@ -353,15 +415,9 @@
           let combinedText = texts.join('\n').trim();
           let sectionLabel = sTitle;
 
-          const lines = combinedText.split('\n').map(l => l.trim()).filter(Boolean);
-          if (lines.length > 1 && /^\d+$/.test(lines[0])) {
-            if (!sectionLabel) sectionLabel = `Bait ${lines[0]}`;
-            combinedText = lines.slice(1).join('\n');
-          }
-
-          if (!sectionLabel) {
-            sectionLabel = `Slide ${sIdx + 1}`;
-          }
+          const cleaned = cleanSlideTextAndSection(sectionLabel, combinedText, sIdx);
+          sectionLabel = cleaned.section;
+          combinedText = cleaned.text;
 
           if (combinedText) {
             parsedSlides.push({
@@ -549,25 +605,53 @@
 
   // Open the Text Edit Modal for the active item or passed item
   function openTextEditModal(item = null) {
-    const target = item || (typeof currentItem !== 'undefined' ? currentItem : null);
+    let target = item;
+    if (!target && typeof currentItem !== 'undefined' && currentItem) {
+      target = currentItem;
+    }
+    // If target still not found or in schedule mode:
+    if (!target && typeof sidebarTab !== 'undefined' && sidebarTab === 'schedule' && typeof schedule !== 'undefined' && Array.isArray(schedule) && schedule.length > 0) {
+      const idx = (typeof currentIndex === 'number' && currentIndex >= 0 && currentIndex < schedule.length) ? currentIndex : 0;
+      target = schedule[idx];
+      if (typeof currentItem !== 'undefined') currentItem = target;
+    }
+    if (!target && typeof songs !== 'undefined' && Array.isArray(songs) && songs.length > 0) {
+      const idx = (typeof currentIndex === 'number' && currentIndex >= 0 && currentIndex < songs.length) ? currentIndex : 0;
+      target = songs[idx];
+      if (typeof currentItem !== 'undefined') currentItem = target;
+    }
+
     if (!target) {
-      if (typeof showToast === 'function') {
-        showToast('⚠️ Pilih lagu atau slide terlebih dahulu untuk mengedit teks.', 'warning');
-      }
-      return;
+      target = { title: 'Lagu Baru', content: '', text: '', slides: [] };
+      if (typeof currentItem !== 'undefined') currentItem = target;
     }
 
     const titleInput = document.getElementById('edit-item-title');
     const contentInput = document.getElementById('edit-item-content');
     if (titleInput) titleInput.value = target.title || '';
-    if (contentInput) contentInput.value = target.content || target.text || '';
 
-    if (typeof openModal === 'function') {
-      openModal('textEditModal');
-    } else {
-      const modal = document.getElementById('textEditModal');
-      if (modal) modal.style.display = 'flex';
+    let contentVal = target.content || target.text || '';
+    if (!contentVal && Array.isArray(target.slides) && target.slides.length > 0) {
+      contentVal = target.slides.map(s => {
+        const sec = s.section ? `[${s.section}]` : '[Slide]';
+        return `${sec}\n${(s.text || '').trim()}`;
+      }).join('\n\n');
     }
+    if (contentInput) contentInput.value = contentVal;
+
+    const modal = document.getElementById('textEditModal');
+    if (modal) {
+      modal.style.display = 'flex';
+      modal.style.zIndex = '100000';
+    }
+    if (typeof openModal === 'function') {
+      try { openModal('textEditModal'); } catch (_) {}
+    }
+    setTimeout(() => {
+      if (contentInput) {
+        try { contentInput.focus(); } catch (_) {}
+      }
+    }, 50);
   }
 
   // Insert section header tag into text edit textarea
@@ -587,7 +671,17 @@
 
   // Save changes from Text Edit Modal
   function saveTextEdit() {
-    if (typeof currentItem === 'undefined' || !currentItem) return;
+    if (typeof currentItem === 'undefined' || !currentItem) {
+      if (typeof sidebarTab !== 'undefined' && sidebarTab === 'schedule' && typeof schedule !== 'undefined' && Array.isArray(schedule) && schedule.length > 0) {
+        const idx = (typeof currentIndex === 'number' && currentIndex >= 0 && currentIndex < schedule.length) ? currentIndex : 0;
+        currentItem = schedule[idx];
+      } else if (typeof songs !== 'undefined' && Array.isArray(songs) && songs.length > 0) {
+        const idx = (typeof currentIndex === 'number' && currentIndex >= 0 && currentIndex < songs.length) ? currentIndex : 0;
+        currentItem = songs[idx];
+      }
+    }
+    if (!currentItem) return;
+
     const newTitle = (document.getElementById('edit-item-title')?.value || '').trim();
     const newContent = document.getElementById('edit-item-content')?.value || '';
 
@@ -599,13 +693,22 @@
       currentItem.searchableText = normalizeSearchText(`${currentItem.title || ''}\n${newContent}`);
     }
 
+    // Parse updated structured slides from newContent
+    let updatedSlides = [];
+    if (typeof parseIntoSlides === 'function') {
+      updatedSlides = parseIntoSlides(newContent);
+    }
+    currentItem.slides = updatedSlides.length ? updatedSlides : [{ section: 'Slide 1', text: newContent }];
+    currentItem.slides = currentItem.slides.map((s, idx) => cleanSlideTextAndSection(s.section, s.text, idx));
+
     // Update in songs array if present
     if (typeof songs !== 'undefined' && Array.isArray(songs)) {
-      const idx = songs.findIndex(s => s.id === currentItem.id || s.title.toLowerCase() === currentItem.title.toLowerCase());
+      const idx = songs.findIndex(s => s.id === currentItem.id || (s.title && currentItem.title && s.title.toLowerCase() === currentItem.title.toLowerCase()));
       if (idx !== -1) {
         songs[idx].title = currentItem.title;
         songs[idx].content = newContent;
         songs[idx].text = newContent;
+        songs[idx].slides = currentItem.slides;
         songs[idx].updatedAt = Date.now();
         if (typeof idbPut === 'function' && typeof STORE_SONGS !== 'undefined' && typeof buildSongRecord === 'function') {
           idbPut(STORE_SONGS, buildSongRecord(songs[idx], { isNew: false })).catch(() => {});
@@ -613,16 +716,9 @@
       }
     }
 
-    // Parse updated structured slides from newContent
-    let updatedSlides = [];
-    if (typeof parseIntoSlides === 'function') {
-      updatedSlides = parseIntoSlides(newContent);
-    }
-    currentItem.slides = updatedSlides.length ? updatedSlides : [{ section: 'Slide 1', text: newContent }];
-
     // Update in schedule array if present
     if (typeof schedule !== 'undefined' && Array.isArray(schedule)) {
-      const schIdx = schedule.findIndex(s => s.id === currentItem.id || s.title.toLowerCase() === currentItem.title.toLowerCase());
+      const schIdx = schedule.findIndex(s => s.id === currentItem.id || (s.title && currentItem.title && s.title.toLowerCase() === currentItem.title.toLowerCase()));
       if (schIdx !== -1) {
         schedule[schIdx].title = currentItem.title;
         schedule[schIdx].content = newContent;
@@ -640,10 +736,10 @@
     if (typeof renderSongs === 'function') renderSongs();
     if (typeof updateButtonView === 'function') updateButtonView();
     if (typeof updateFocusedEditorBanner === 'function') updateFocusedEditorBanner();
-    if (typeof renderFocusedMainPanel === 'function') renderFocusedMainPanel();
+    if (typeof renderFocusedMainPanel === 'function') renderFocusedMainPanel({ forceFullRender: true });
 
     // Update live projection if this item is currently live on stream
-    if (typeof isLive !== 'undefined' && isLive && typeof livePointer !== 'undefined' && livePointer && livePointer.kind === 'songs' && livePointer.index === currentIndex) {
+    if (typeof isLive !== 'undefined' && isLive) {
       if (typeof scheduleLiveUpdate === 'function') scheduleLiveUpdate();
     }
 
@@ -661,6 +757,10 @@
 
   // High-level: Import .ewsx into Bible Song Pro (REPLACES PREVIOUS SCHEDULE)
   async function importEwsxIntoBsp(file, { addToSetlist = true, addToSongs = true } = {}) {
+    // Preserve active font sizes before import so they never revert to default
+    const savedFontSizeFull = document.getElementById('font-size-val')?.value;
+    const savedFontSizeLT = document.getElementById('font-size-lt-val')?.value;
+    const savedLtFontSongs = (typeof ltFontSongs !== 'undefined') ? ltFontSongs : null;
     const toast = (msg, type = 'info') => {
       if (typeof showToast === 'function') showToast(msg);
       else console.log(`[EW Import ${type}]`, msg);
@@ -751,6 +851,24 @@
         selectItem(0);
       }
 
+      // Restore user's configured font size so it NEVER reverts to default
+      if (savedFontSizeFull && document.getElementById('font-size-val')) {
+        document.getElementById('font-size-val').value = savedFontSizeFull;
+      }
+      if (savedFontSizeLT && document.getElementById('font-size-lt-val')) {
+        document.getElementById('font-size-lt-val').value = savedFontSizeLT;
+      }
+      if (savedLtFontSongs != null && typeof ltFontSongs !== 'undefined') {
+        ltFontSongs = savedLtFontSongs;
+      }
+      if (typeof updateWorkspaceFontSizeControl === 'function') {
+        updateWorkspaceFontSizeControl();
+      }
+      if (typeof saveProjectionSettingsProfileForTab === 'function') {
+        saveProjectionSettingsProfileForTab('schedule');
+        saveProjectionSettingsProfileForTab('songs');
+      }
+
       // Close the import file picker modal if open
       if (typeof closeModal === 'function') {
         closeModal('ewImportModal');
@@ -774,6 +892,11 @@
       if (typeof showToast === 'function') showToast(msg);
       else console.log(`[EW Import ${type}]`, msg);
     };
+
+    // Preserve active font sizes before import
+    const savedFontSizeFull = document.getElementById('font-size-val')?.value;
+    const savedFontSizeLT = document.getElementById('font-size-lt-val')?.value;
+    const savedLtFontSongs = (typeof ltFontSongs !== 'undefined') ? ltFontSongs : null;
 
     try {
       toast('⏳ Membaca database lagu EasyWorship...', 'info');
@@ -819,6 +942,23 @@
         selectItem(0);
       }
 
+      // Restore user's configured font size so it NEVER reverts to default
+      if (savedFontSizeFull && document.getElementById('font-size-val')) {
+        document.getElementById('font-size-val').value = savedFontSizeFull;
+      }
+      if (savedFontSizeLT && document.getElementById('font-size-lt-val')) {
+        document.getElementById('font-size-lt-val').value = savedFontSizeLT;
+      }
+      if (savedLtFontSongs != null && typeof ltFontSongs !== 'undefined') {
+        ltFontSongs = savedLtFontSongs;
+      }
+      if (typeof updateWorkspaceFontSizeControl === 'function') {
+        updateWorkspaceFontSizeControl();
+      }
+      if (typeof saveProjectionSettingsProfileForTab === 'function') {
+        saveProjectionSettingsProfileForTab('songs');
+      }
+
       if (typeof closeModal === 'function') {
         closeModal('ewImportModal');
       }
@@ -862,6 +1002,11 @@
       if (typeof showToast === 'function') showToast(msg);
       else console.log(`[EW Import ${type}]`, msg);
     };
+
+    // Preserve active font sizes before import
+    const savedFontSizeFull = document.getElementById('font-size-val')?.value;
+    const savedFontSizeLT = document.getElementById('font-size-lt-val')?.value;
+    const savedLtFontSongs = (typeof ltFontSongs !== 'undefined') ? ltFontSongs : null;
 
     try {
       toast('⚡ Memuat 1.410 lagu EasyWorship lengkap dari PC...', 'info');
@@ -919,6 +1064,23 @@
         selectItem(0);
       }
 
+      // Restore user's configured font size so it NEVER reverts to default
+      if (savedFontSizeFull && document.getElementById('font-size-val')) {
+        document.getElementById('font-size-val').value = savedFontSizeFull;
+      }
+      if (savedFontSizeLT && document.getElementById('font-size-lt-val')) {
+        document.getElementById('font-size-lt-val').value = savedFontSizeLT;
+      }
+      if (savedLtFontSongs != null && typeof ltFontSongs !== 'undefined') {
+        ltFontSongs = savedLtFontSongs;
+      }
+      if (typeof updateWorkspaceFontSizeControl === 'function') {
+        updateWorkspaceFontSizeControl();
+      }
+      if (typeof saveProjectionSettingsProfileForTab === 'function') {
+        saveProjectionSettingsProfileForTab('songs');
+      }
+
       if (typeof closeModal === 'function') {
         closeModal('ewImportModal');
       }
@@ -934,6 +1096,7 @@
   }
 
   // Expose on window
+  window.cleanSlideTextAndSection = cleanSlideTextAndSection;
   window.showImportSuccessView = showImportSuccessView;
   window.openTextEditModal = openTextEditModal;
   window.saveTextEdit = saveTextEdit;
@@ -943,6 +1106,7 @@
   window.BSP_EASYWORSHIP = {
     getSqlEngine: getEwSqlEngine,
     stripRtf,
+    cleanSlideTextAndSection,
     parseIntoSlides,
     extractEwsx,
     parseEwsxSchedule,

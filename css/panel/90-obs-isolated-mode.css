@@ -747,6 +747,11 @@ body.obs-isolated .segmented-picker .seg-btn {
 }
 
 /* ===== EDIT TEXT MODAL RESPONSIVE ===== */
+#textEditModal.modal-overlay,
+body.obs-isolated #textEditModal.modal-overlay {
+  z-index: 100000 !important;
+}
+
 @media (max-width: 650px) {
   #textEditModal .modal-content {
     padding: 10px 12px !important;

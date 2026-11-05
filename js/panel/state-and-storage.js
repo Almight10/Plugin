@@ -966,12 +966,12 @@
       ltFontBible = (next.ltFontBible != null) ? Number(next.ltFontBible) : ltFontBible;
       ltFontCustom = (next.ltFontCustom != null) ? Number(next.ltFontCustom) : ltFontCustom;
       if (document.getElementById('font-size-lt-val')) {
-        const effFont = targetTab === 'songs' ? ltFontSongs : ltFontBible;
+        const effFont = (targetTab === 'songs' || targetTab === 'schedule') ? ltFontSongs : ltFontBible;
         document.getElementById('font-size-lt-val').value = effFont || 30;
       }
       const ltFontLabel = document.getElementById('lt-content-font-label');
       if (ltFontLabel) {
-        ltFontLabel.textContent = (targetTab === 'songs' ? 'Song Font Size (pt)' : 'Verse Font Size (pt)');
+        ltFontLabel.textContent = ((targetTab === 'songs' || targetTab === 'schedule') ? 'Song Font Size (pt)' : 'Verse Font Size (pt)');
       }
       if (next.refFontSize != null && document.getElementById('ref-font-size-val')) document.getElementById('ref-font-size-val').value = next.refFontSize;
       if (next.ltRefFontSize != null && document.getElementById('ref-font-size-lt-val')) document.getElementById('ref-font-size-lt-val').value = next.ltRefFontSize;
