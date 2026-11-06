@@ -603,28 +603,54 @@
     }
   }
 
-  // Open the Text Edit Modal for the active item or passed item
-  function openTextEditModal(item = null) {
-    let target = item;
-    if (!target && typeof currentItem !== 'undefined' && currentItem) {
-      target = currentItem;
+  // Open the Text Edit Modal for the active item or passed item/index
+  function openTextEditModal(targetOrIndex = null) {
+    let target = null;
+    const sched = (typeof schedule !== 'undefined' && Array.isArray(schedule)) ? schedule : (window.schedule || []);
+    const sngs = (typeof songs !== 'undefined' && Array.isArray(songs)) ? songs : (window.songs || []);
+    const curTab = (typeof sidebarTab !== 'undefined') ? sidebarTab : (document.body.dataset.sidebarTab || 'schedule');
+
+    if (typeof targetOrIndex === 'number' && Number.isFinite(targetOrIndex)) {
+      if (curTab === 'schedule' && sched[targetOrIndex]) {
+        target = sched[targetOrIndex];
+      } else if (sngs[targetOrIndex]) {
+        target = sngs[targetOrIndex];
+      } else if (sched[targetOrIndex]) {
+        target = sched[targetOrIndex];
+      }
+    } else if (targetOrIndex && typeof targetOrIndex === 'object') {
+      target = targetOrIndex;
     }
-    // If target still not found or in schedule mode:
-    if (!target && typeof sidebarTab !== 'undefined' && sidebarTab === 'schedule' && typeof schedule !== 'undefined' && Array.isArray(schedule) && schedule.length > 0) {
-      const idx = (typeof currentIndex === 'number' && currentIndex >= 0 && currentIndex < schedule.length) ? currentIndex : 0;
-      target = schedule[idx];
-      if (typeof currentItem !== 'undefined') currentItem = target;
+
+    if (!target) {
+      if (typeof currentItem !== 'undefined' && currentItem) {
+        target = currentItem;
+      } else if (window.currentItem) {
+        target = window.currentItem;
+      }
     }
-    if (!target && typeof songs !== 'undefined' && Array.isArray(songs) && songs.length > 0) {
-      const idx = (typeof currentIndex === 'number' && currentIndex >= 0 && currentIndex < songs.length) ? currentIndex : 0;
-      target = songs[idx];
-      if (typeof currentItem !== 'undefined') currentItem = target;
+
+    if (!target) {
+      const idx = (typeof currentIndex === 'number' && currentIndex >= 0)
+        ? currentIndex
+        : ((typeof window.currentIndex === 'number' && window.currentIndex >= 0) ? window.currentIndex : 0);
+      if (curTab === 'schedule' && sched.length > 0) {
+        target = sched[idx] || sched[0];
+      } else if (sngs.length > 0) {
+        target = sngs[idx] || sngs[0];
+      } else if (sched.length > 0) {
+        target = sched[idx] || sched[0];
+      }
     }
 
     if (!target) {
       target = { title: 'Lagu Baru', content: '', text: '', slides: [] };
-      if (typeof currentItem !== 'undefined') currentItem = target;
     }
+
+    try {
+      currentItem = target;
+      window.currentItem = target;
+    } catch (_) {}
 
     const titleInput = document.getElementById('edit-item-title');
     const contentInput = document.getElementById('edit-item-content');
@@ -638,6 +664,14 @@
       }).join('\n\n');
     }
     if (contentInput) contentInput.value = contentVal;
+
+    // Ensure any blocking overlays or previous modals are closed
+    try {
+      const successModal = document.getElementById('ewImportSuccessModal');
+      if (successModal) successModal.style.display = 'none';
+      const importModal = document.getElementById('ewImportModal');
+      if (importModal) importModal.style.display = 'none';
+    } catch (_) {}
 
     const modal = document.getElementById('textEditModal');
     if (modal) {
@@ -847,8 +881,18 @@
       if (typeof saveToStorageDebounced === 'function') saveToStorageDebounced();
       if (typeof setSidebarTab === 'function') setSidebarTab('schedule');
       if (typeof renderSongs === 'function') renderSongs();
+
+      const panel = document.getElementById('focused-main-panel');
+      if (panel) {
+        panel.removeAttribute('data-active-item-index');
+        panel.removeAttribute('data-active-item-key');
+      }
+
       if (typeof selectItem === 'function' && schedule.length > 0) {
-        selectItem(0);
+        selectItem(0, { forceFullRender: true });
+      }
+      if (typeof renderFocusedMainPanel === 'function') {
+        renderFocusedMainPanel({ forceFullRender: true });
       }
 
       // Restore user's configured font size so it NEVER reverts to default
@@ -938,8 +982,18 @@
       if (typeof saveToStorageDebounced === 'function') saveToStorageDebounced();
       if (typeof setSidebarTab === 'function') setSidebarTab('songs');
       if (typeof renderSongs === 'function') renderSongs();
+
+      const panel = document.getElementById('focused-main-panel');
+      if (panel) {
+        panel.removeAttribute('data-active-item-index');
+        panel.removeAttribute('data-active-item-key');
+      }
+
       if (typeof selectItem === 'function' && songs.length > 0) {
-        selectItem(0);
+        selectItem(0, { forceFullRender: true });
+      }
+      if (typeof renderFocusedMainPanel === 'function') {
+        renderFocusedMainPanel({ forceFullRender: true });
       }
 
       // Restore user's configured font size so it NEVER reverts to default
@@ -1060,8 +1114,18 @@
       if (typeof saveToStorageDebounced === 'function') saveToStorageDebounced();
       if (typeof setSidebarTab === 'function') setSidebarTab('songs');
       if (typeof renderSongs === 'function') renderSongs();
+
+      const panel = document.getElementById('focused-main-panel');
+      if (panel) {
+        panel.removeAttribute('data-active-item-index');
+        panel.removeAttribute('data-active-item-key');
+      }
+
       if (typeof selectItem === 'function' && songs.length > 0) {
-        selectItem(0);
+        selectItem(0, { forceFullRender: true });
+      }
+      if (typeof renderFocusedMainPanel === 'function') {
+        renderFocusedMainPanel({ forceFullRender: true });
       }
 
       // Restore user's configured font size so it NEVER reverts to default

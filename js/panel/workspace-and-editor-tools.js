@@ -2433,14 +2433,16 @@
         panel.removeAttribute('data-active-item-index');
         panel.innerHTML = `
           <div class="focused-main-shell">
-            <div class="ew-preview-topbar">
+            <div class="ew-preview-topbar" style="display:flex;align-items:center;justify-content:space-between;gap:6px;padding:4px 8px;background:rgba(15,23,42,0.85);border-bottom:1px solid rgba(255,255,255,0.08);flex-shrink:0;flex-wrap:wrap;">
               <div style="display:flex;align-items:center;gap:8px;">
                 <span style="background:rgba(108,99,255,0.25);color:#a5b4fc;border:1px solid rgba(108,99,255,0.45);font-size:10px;font-weight:700;padding:3px 8px;border-radius:5px;">📋 JADWAL SETLIST</span>
-                <span class="focused-main-title" style="font-size:14px;">Setlist Kosong</span>
+                <span class="focused-main-title" style="font-size:13px;font-weight:700;color:#fff;">Setlist Kosong</span>
               </div>
-              <div style="display:flex;gap:8px;">
-                <button type="button" class="btn" onclick="openModal('ewImportModal')" style="background:linear-gradient(135deg,#6C63FF,#4F46E5);color:#fff;font-size:11px;font-weight:700;padding:5px 12px;border-radius:6px;border:none;cursor:pointer;">📂 Import EasyWorship</button>
-                <button type="button" class="btn" onclick="openNewSongModalClean()" style="background:linear-gradient(135deg,#10B981,#059669);color:#fff;font-size:11px;font-weight:700;padding:5px 12px;border-radius:6px;border:none;cursor:pointer;">➕ Tambah Lagu</button>
+              <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">
+                <button type="button" class="btn" onclick="openNewSongModalClean()" title="Tambah Lagu Baru" style="display:inline-flex;align-items:center;gap:4px;height:24px;padding:0 8px;font-size:11px;font-weight:700;background:linear-gradient(135deg,#10B981,#059669);color:#fff;border-radius:4px;border:1px solid rgba(255,255,255,0.2);cursor:pointer;white-space:nowrap;"><span>➕</span> <span>Tambah Lagu</span></button>
+                <button type="button" class="btn" onclick="window.BSP_EASYWORSHIP?.loadSampleEwsx()" title="Muat Jadwal Contoh 2_September.ewsx" style="display:inline-flex;align-items:center;gap:4px;height:24px;padding:0 7px;font-size:11px;font-weight:700;background:rgba(245,158,11,0.2);border:1px solid rgba(245,158,11,0.5);color:#F59E0B;border-radius:4px;cursor:pointer;white-space:nowrap;"><span>⚡</span> <span>2_September.ewsx</span></button>
+                <button type="button" class="btn" onclick="window.BSP_EASYWORSHIP?.loadLocalProfileSongs()" title="Muat 1.410 Lagu EasyWorship" style="display:inline-flex;align-items:center;gap:4px;height:24px;padding:0 7px;font-size:11px;font-weight:700;background:rgba(16,185,129,0.2);border:1px solid rgba(16,185,129,0.5);color:#10B981;border-radius:4px;cursor:pointer;white-space:nowrap;"><span>⚡</span> <span>1.410 Lagu EW</span></button>
+                <button class="btn" type="button" onclick="openModal('settingsModal')" title="Pengaturan (Settings)" style="display:inline-flex;align-items:center;justify-content:center;height:24px;width:24px;min-width:24px;padding:0;background:#334155;color:#fff;border-radius:4px;border:1px solid rgba(255,255,255,0.2);cursor:pointer;font-size:12px;">⚙</button>
               </div>
             </div>
             <div class="focused-main-empty">
@@ -2471,12 +2473,15 @@
       // In-place update if grid already exists for this exact setlist item
       const existingGrid = panel.querySelector('.ew-slide-grid');
       const currentPanelItemIdx = panel.getAttribute('data-active-item-index');
-      if (existingGrid && currentPanelItemIdx === String(activeIdx) && (opts?.forceFullRender !== true)) {
+      const currentPanelItemKey = panel.getAttribute('data-active-item-key');
+      const activeItemKey = String(activeItem ? (activeItem.id || activeItem.title || activeIdx) : activeIdx);
+      if (existingGrid && currentPanelItemIdx === String(activeIdx) && currentPanelItemKey === activeItemKey && (opts?.forceFullRender !== true)) {
         updateFocusedScheduleSlideUi(curLineCursor);
         return;
       }
 
       panel.setAttribute('data-active-item-index', String(activeIdx));
+      panel.setAttribute('data-active-item-key', activeItemKey);
       const savedScrollTop = (opts && opts.preserveScroll && existingGrid) ? existingGrid.scrollTop : 0;
       
       // Safe local HTML escaper
@@ -2610,20 +2615,29 @@
 
       panel.innerHTML = `
         <div class="focused-main-shell">
-          <div class="ew-preview-topbar" style="display:flex;align-items:center;justify-content:space-between;gap:6px;padding:3px 8px;min-height:28px;background:rgba(15,23,42,0.85);border-bottom:1px solid rgba(255,255,255,0.08);flex-shrink:0;">
+          <div class="ew-preview-topbar" style="display:flex;align-items:center;justify-content:space-between;gap:6px;padding:3px 8px;min-height:28px;background:rgba(15,23,42,0.85);border-bottom:1px solid rgba(255,255,255,0.08);flex-shrink:0;flex-wrap:wrap;">
             <div style="display:flex;align-items:center;gap:6px;min-width:0;flex:1 1 auto;overflow:hidden;">
               <span style="background:rgba(108,99,255,0.25);color:#a5b4fc;border:1px solid rgba(108,99,255,0.45);font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;white-space:nowrap;">📋 ${activeIdx + 1}/${entries.length}</span>
               <div style="font-size:11.5px;font-weight:700;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${itemTitle}">${itemTitle}</div>
               <span class="ew-topbar-live-status ${isItemLive ? 'live' : 'preview'}">${isItemLive ? `🔴 TAYANG: Slide ${liveLineCursor + 1}` : `👁 PREVIEW: Slide ${curLineCursor + 1}`}</span>
             </div>
-            <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
+            <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;flex-wrap:wrap;">
+              <button class="btn" type="button" onclick="openNewSongModalClean()" title="Tambah Lagu Baru ke Database" style="display:inline-flex;align-items:center;gap:4px;height:24px;padding:0 8px;font-size:11px;font-weight:700;background:linear-gradient(135deg, #10B981, #059669);color:#fff;border-radius:4px;border:1px solid rgba(255,255,255,0.2);cursor:pointer;box-shadow:0 1px 4px rgba(16,185,129,0.3);white-space:nowrap;">
+                <span>➕</span> <span>Tambah Lagu</span>
+              </button>
+              <button class="btn" type="button" onclick="window.BSP_EASYWORSHIP?.loadSampleEwsx()" title="Muat Jadwal Contoh 2_September.ewsx" style="display:inline-flex;align-items:center;gap:4px;height:24px;padding:0 7px;font-size:11px;font-weight:700;background:rgba(245,158,11,0.2);border:1px solid rgba(245,158,11,0.5);color:#F59E0B;border-radius:4px;cursor:pointer;white-space:nowrap;">
+                <span>⚡</span> <span>2_September.ewsx</span>
+              </button>
+              <button class="btn" type="button" onclick="window.BSP_EASYWORSHIP?.loadLocalProfileSongs()" title="Muat Langsung 1.410 Database Lagu EasyWorship PC" style="display:inline-flex;align-items:center;gap:4px;height:24px;padding:0 7px;font-size:11px;font-weight:700;background:rgba(16,185,129,0.2);border:1px solid rgba(16,185,129,0.5);color:#10B981;border-radius:4px;cursor:pointer;white-space:nowrap;">
+                <span>⚡</span> <span>1.410 Lagu EW</span>
+              </button>
               <div class="workspace-font-size-control" style="display:inline-flex;align-items:center;height:24px;border-radius:4px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);overflow:hidden;" title="Ukuran Font Teks / Lirik">
                 <button class="workspace-font-size-step" type="button" onclick="stepWorkspaceFontSize(-1)" style="height:24px;line-height:24px;padding:0 5px;background:none;border:none;color:#fff;cursor:pointer;font-size:11px;">-</button>
                 <button class="workspace-font-size-value" id="ew-font-size-val" type="button" onclick="stepWorkspaceFontSize(1)" style="height:24px;line-height:24px;padding:0 4px;background:none;border:none;color:#38bdf8;cursor:pointer;font-size:11px;font-weight:700;min-width:32px;">${Math.round(typeof getWorkspaceFontSizeValue === 'function' ? getWorkspaceFontSizeValue() : 40)}pt</button>
                 <button class="workspace-font-size-step" type="button" onclick="stepWorkspaceFontSize(1)" style="height:24px;line-height:24px;padding:0 5px;background:none;border:none;color:#fff;cursor:pointer;font-size:11px;">+</button>
               </div>
-              <button class="btn" type="button" onclick="openTextEditModal(schedule[${activeIdx}])" title="Edit Teks / Lirik" style="display:inline-flex;align-items:center;gap:2px;height:24px;padding:0 6px;font-size:11px;background:rgba(245,158,11,0.25);border:1px solid rgba(245,158,11,0.6);color:#F59E0B;border-radius:4px;cursor:pointer;font-weight:700;">
-                <span>✏️</span>
+              <button class="btn" type="button" onclick="openTextEditModal(${activeIdx})" title="Edit Teks / Lirik Lagu yang Sedang Dibuka" style="display:inline-flex;align-items:center;gap:4px;height:24px;padding:0 8px;font-size:11px;font-weight:700;background:rgba(245,158,11,0.25);border:1px solid rgba(245,158,11,0.6);color:#F59E0B;border-radius:4px;cursor:pointer;white-space:nowrap;">
+                <span>✏️</span> <span>Edit Teks</span>
               </button>
               <button class="btn" type="button" onclick="openModal('settingsModal')" title="Pengaturan (Settings)" style="display:inline-flex;align-items:center;justify-content:center;height:24px;width:24px;min-width:24px;padding:0;background:#334155;color:#fff;border-radius:4px;border:1px solid rgba(255,255,255,0.2);cursor:pointer;font-size:12px;">⚙</button>
             </div>

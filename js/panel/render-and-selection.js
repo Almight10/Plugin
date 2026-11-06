@@ -2113,7 +2113,7 @@
         updateButtonView({ preserveScroll: preserveButtonScroll, skipAutoScroll: preserveButtonScroll });
       }
       if (sidebarTab === 'schedule' && typeof renderFocusedMainPanel === 'function') {
-        renderFocusedMainPanel();
+        renderFocusedMainPanel(opts);
       }
       enforceBibleModeRules();
       maybeTranslateCurrentSongOnOpen();

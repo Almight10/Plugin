@@ -208,6 +208,38 @@
     let lastBibleSearchQuery = '';
     let activeBibleVersion = null, pendingImport = null;
     let pendingBackupData = null;
+    try {
+      Object.defineProperty(window, 'schedule', {
+        get: () => schedule,
+        set: (v) => { schedule = v; },
+        configurable: true
+      });
+      Object.defineProperty(window, 'songs', {
+        get: () => songs,
+        set: (v) => { songs = v; },
+        configurable: true
+      });
+      Object.defineProperty(window, 'currentItem', {
+        get: () => currentItem,
+        set: (v) => { currentItem = v; },
+        configurable: true
+      });
+      Object.defineProperty(window, 'currentIndex', {
+        get: () => currentIndex,
+        set: (v) => { currentIndex = v; },
+        configurable: true
+      });
+      Object.defineProperty(window, 'sidebarTab', {
+        get: () => sidebarTab,
+        set: (v) => { sidebarTab = v; },
+        configurable: true
+      });
+      Object.defineProperty(window, 'bibles', {
+        get: () => bibles,
+        set: (v) => { bibles = v; },
+        configurable: true
+      });
+    } catch (_) {}
     let liveKind = null, livePointer = null, liveLineCursor = 0, liveLinesPerPage = 2, liveBackgroundState = null, liveRatio = 'full', liveTextTransformState = null;
     let bgUploadDataUrl = null, bgVideoUploadDataUrl = null, rafPending = false, saveTimer = null;
     let pendingPersist = false;
