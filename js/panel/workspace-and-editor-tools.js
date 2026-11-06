@@ -2439,9 +2439,7 @@
                 <span class="focused-main-title" style="font-size:13px;font-weight:700;color:#fff;">Setlist Kosong</span>
               </div>
               <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">
-                <button type="button" class="btn" onclick="openNewSongModalClean()" title="Tambah Lagu Baru" style="display:inline-flex;align-items:center;gap:4px;height:24px;padding:0 8px;font-size:11px;font-weight:700;background:linear-gradient(135deg,#10B981,#059669);color:#fff;border-radius:4px;border:1px solid rgba(255,255,255,0.2);cursor:pointer;white-space:nowrap;"><span>➕</span> <span>Tambah Lagu</span></button>
-                <button type="button" class="btn" onclick="window.BSP_EASYWORSHIP?.loadSampleEwsx()" title="Muat Jadwal Contoh 2_September.ewsx" style="display:inline-flex;align-items:center;gap:4px;height:24px;padding:0 7px;font-size:11px;font-weight:700;background:rgba(245,158,11,0.2);border:1px solid rgba(245,158,11,0.5);color:#F59E0B;border-radius:4px;cursor:pointer;white-space:nowrap;"><span>⚡</span> <span>2_September.ewsx</span></button>
-                <button type="button" class="btn" onclick="window.BSP_EASYWORSHIP?.loadLocalProfileSongs()" title="Muat 1.410 Lagu EasyWorship" style="display:inline-flex;align-items:center;gap:4px;height:24px;padding:0 7px;font-size:11px;font-weight:700;background:rgba(16,185,129,0.2);border:1px solid rgba(16,185,129,0.5);color:#10B981;border-radius:4px;cursor:pointer;white-space:nowrap;"><span>⚡</span> <span>1.410 Lagu EW</span></button>
+                <button type="button" class="btn" onclick="openModal('ewImportModal')" title="Impor Jadwal (.ewsx) atau Database EasyWorship" style="display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 10px;font-size:11px;font-weight:700;background:linear-gradient(135deg,#6C63FF,#4F46E5);color:#fff;border-radius:4px;border:1px solid rgba(255,255,255,0.25);cursor:pointer;white-space:nowrap;box-shadow:0 1px 4px rgba(108,99,255,0.3);"><span>📂</span> <span>Import EasyWorship</span></button>
                 <button class="btn" type="button" onclick="openModal('settingsModal')" title="Pengaturan (Settings)" style="display:inline-flex;align-items:center;justify-content:center;height:24px;width:24px;min-width:24px;padding:0;background:#334155;color:#fff;border-radius:4px;border:1px solid rgba(255,255,255,0.2);cursor:pointer;font-size:12px;">⚙</button>
               </div>
             </div>
@@ -2622,14 +2620,8 @@
               <span class="ew-topbar-live-status ${isItemLive ? 'live' : 'preview'}">${isItemLive ? `🔴 TAYANG: Slide ${liveLineCursor + 1}` : `👁 PREVIEW: Slide ${curLineCursor + 1}`}</span>
             </div>
             <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;flex-wrap:wrap;">
-              <button class="btn" type="button" onclick="openNewSongModalClean()" title="Tambah Lagu Baru ke Database" style="display:inline-flex;align-items:center;gap:4px;height:24px;padding:0 8px;font-size:11px;font-weight:700;background:linear-gradient(135deg, #10B981, #059669);color:#fff;border-radius:4px;border:1px solid rgba(255,255,255,0.2);cursor:pointer;box-shadow:0 1px 4px rgba(16,185,129,0.3);white-space:nowrap;">
-                <span>➕</span> <span>Tambah Lagu</span>
-              </button>
-              <button class="btn" type="button" onclick="window.BSP_EASYWORSHIP?.loadSampleEwsx()" title="Muat Jadwal Contoh 2_September.ewsx" style="display:inline-flex;align-items:center;gap:4px;height:24px;padding:0 7px;font-size:11px;font-weight:700;background:rgba(245,158,11,0.2);border:1px solid rgba(245,158,11,0.5);color:#F59E0B;border-radius:4px;cursor:pointer;white-space:nowrap;">
-                <span>⚡</span> <span>2_September.ewsx</span>
-              </button>
-              <button class="btn" type="button" onclick="window.BSP_EASYWORSHIP?.loadLocalProfileSongs()" title="Muat Langsung 1.410 Database Lagu EasyWorship PC" style="display:inline-flex;align-items:center;gap:4px;height:24px;padding:0 7px;font-size:11px;font-weight:700;background:rgba(16,185,129,0.2);border:1px solid rgba(16,185,129,0.5);color:#10B981;border-radius:4px;cursor:pointer;white-space:nowrap;">
-                <span>⚡</span> <span>1.410 Lagu EW</span>
+              <button class="btn" type="button" onclick="openModal('ewImportModal')" title="Impor Jadwal (.ewsx) atau Database EasyWorship" style="display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 10px;font-size:11px;font-weight:700;background:linear-gradient(135deg, #6C63FF, #4F46E5);color:#fff;border-radius:4px;border:1px solid rgba(255,255,255,0.25);cursor:pointer;box-shadow:0 1px 4px rgba(108,99,255,0.3);white-space:nowrap;">
+                <span>📂</span> <span>Import EasyWorship</span>
               </button>
               <div class="workspace-font-size-control" style="display:inline-flex;align-items:center;height:24px;border-radius:4px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);overflow:hidden;" title="Ukuran Font Teks / Lirik">
                 <button class="workspace-font-size-step" type="button" onclick="stepWorkspaceFontSize(-1)" style="height:24px;line-height:24px;padding:0 5px;background:none;border:none;color:#fff;cursor:pointer;font-size:11px;">-</button>
