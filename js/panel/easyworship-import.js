@@ -581,7 +581,7 @@
         const slideCount = (item.slides && item.slides.length) ? item.slides.length : 1;
         const sections = (item.slides || []).map(s => s.section).filter(Boolean).slice(0, 3).join(', ');
         return `
-          <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:8px;">
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:8px;cursor:pointer;transition:background 0.15s ease;" onclick="closeModal('ewImportSuccessModal');openTextEditModal(${idx})" title="Klik untuk langsung mengedit item ini">
             <span style="font-size:11px;font-weight:700;color:var(--accent,#6C63FF);min-width:22px;">${idx + 1}</span>
             <div style="flex:1;min-width:0;">
               <div style="font-size:13px;font-weight:600;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${item.title}</div>
@@ -591,6 +591,7 @@
               ${(item.isSong || item.presentationType === 6) ? '🎵 Lagu' : '📋 Liturgi'}
             </span>
             <span style="font-size:11px;background:rgba(255,255,255,0.08);color:var(--text-secondary,#8f98a8);padding:2px 8px;border-radius:6px;white-space:nowrap;">${slideCount} slide</span>
+            <button type="button" class="btn" style="background:rgba(245,158,11,0.2);border:1px solid rgba(245,158,11,0.5);color:#F59E0B;padding:3px 8px;border-radius:5px;font-size:11px;cursor:pointer;font-weight:600;" onclick="event.stopPropagation();closeModal('ewImportSuccessModal');openTextEditModal(${idx})" title="Edit Item Ini">✏️ Edit</button>
           </div>
         `;
       }).join('');
@@ -605,12 +606,17 @@
 
   // Open the Text Edit Modal for the active item or passed item/index
   function openTextEditModal(targetOrIndex = null) {
+    if (targetOrIndex && (typeof Event !== 'undefined' && targetOrIndex instanceof Event || targetOrIndex.preventDefault || targetOrIndex.stopPropagation)) {
+      targetOrIndex = null;
+    }
     let target = null;
+    let resolvedIndex = -1;
     const sched = (typeof schedule !== 'undefined' && Array.isArray(schedule)) ? schedule : (window.schedule || []);
     const sngs = (typeof songs !== 'undefined' && Array.isArray(songs)) ? songs : (window.songs || []);
     const curTab = (typeof sidebarTab !== 'undefined') ? sidebarTab : (document.body.dataset.sidebarTab || 'schedule');
 
     if (typeof targetOrIndex === 'number' && Number.isFinite(targetOrIndex)) {
+      resolvedIndex = targetOrIndex;
       if (curTab === 'schedule' && sched[targetOrIndex]) {
         target = sched[targetOrIndex];
       } else if (sngs[targetOrIndex]) {
@@ -620,6 +626,11 @@
       }
     } else if (targetOrIndex && typeof targetOrIndex === 'object') {
       target = targetOrIndex;
+      if (curTab === 'schedule') {
+        resolvedIndex = sched.indexOf(target);
+      } else {
+        resolvedIndex = sngs.indexOf(target);
+      }
     }
 
     if (!target) {
@@ -636,10 +647,13 @@
         : ((typeof window.currentIndex === 'number' && window.currentIndex >= 0) ? window.currentIndex : 0);
       if (curTab === 'schedule' && sched.length > 0) {
         target = sched[idx] || sched[0];
+        resolvedIndex = sched[idx] ? idx : 0;
       } else if (sngs.length > 0) {
         target = sngs[idx] || sngs[0];
+        resolvedIndex = sngs[idx] ? idx : 0;
       } else if (sched.length > 0) {
         target = sched[idx] || sched[0];
+        resolvedIndex = sched[idx] ? idx : 0;
       }
     }
 
@@ -647,10 +661,30 @@
       target = { title: 'Lagu Baru', content: '', text: '', slides: [] };
     }
 
+    if (resolvedIndex === -1) {
+      if (curTab === 'schedule') {
+        resolvedIndex = sched.indexOf(target);
+      } else {
+        resolvedIndex = sngs.indexOf(target);
+      }
+    }
+
+    // Synchronize active currentItem and currentIndex globally so UI stays perfectly aligned
     try {
       currentItem = target;
       window.currentItem = target;
+      if (resolvedIndex >= 0) {
+        currentIndex = resolvedIndex;
+        window.currentIndex = resolvedIndex;
+      }
     } catch (_) {}
+
+    // Track active editing item details to ensure rock-solid save under every condition
+    window._activeEditingRef = target;
+    window._activeEditingIndex = resolvedIndex;
+    window._activeEditingTab = curTab;
+    window._activeEditingOriginalId = target.id || null;
+    window._activeEditingOriginalTitle = target.title || '';
 
     const titleInput = document.getElementById('edit-item-title');
     const contentInput = document.getElementById('edit-item-content');
@@ -658,25 +692,32 @@
 
     let contentVal = target.content || target.text || '';
     if (!contentVal && Array.isArray(target.slides) && target.slides.length > 0) {
-      contentVal = target.slides.map(s => {
-        const sec = s.section ? `[${s.section}]` : '[Slide]';
+      contentVal = target.slides.map((s, sIdx) => {
+        const sec = s.section ? `[${s.section}]` : `[Slide ${sIdx + 1}]`;
         return `${sec}\n${(s.text || '').trim()}`;
       }).join('\n\n');
     }
     if (contentInput) contentInput.value = contentVal;
 
-    // Ensure any blocking overlays or previous modals are closed
+    // Ensure any blocking overlays or previous modals are cleanly closed
     try {
       const successModal = document.getElementById('ewImportSuccessModal');
-      if (successModal) successModal.style.display = 'none';
+      if (successModal) {
+        successModal.style.display = 'none';
+        if (typeof closeModal === 'function') closeModal('ewImportSuccessModal');
+      }
       const importModal = document.getElementById('ewImportModal');
-      if (importModal) importModal.style.display = 'none';
+      if (importModal) {
+        importModal.style.display = 'none';
+        if (typeof closeModal === 'function') closeModal('ewImportModal');
+      }
     } catch (_) {}
 
     const modal = document.getElementById('textEditModal');
     if (modal) {
       modal.style.display = 'flex';
-      modal.style.zIndex = '100000';
+      modal.style.zIndex = '100005';
+      modal.style.pointerEvents = 'auto';
     }
     if (typeof openModal === 'function') {
       try { openModal('textEditModal'); } catch (_) {}
@@ -703,68 +744,151 @@
     textarea.focus();
   }
 
-  // Save changes from Text Edit Modal
+  // Save changes from Text Edit Modal (100% resilient across every condition)
   function saveTextEdit() {
-    if (typeof currentItem === 'undefined' || !currentItem) {
-      if (typeof sidebarTab !== 'undefined' && sidebarTab === 'schedule' && typeof schedule !== 'undefined' && Array.isArray(schedule) && schedule.length > 0) {
-        const idx = (typeof currentIndex === 'number' && currentIndex >= 0 && currentIndex < schedule.length) ? currentIndex : 0;
-        currentItem = schedule[idx];
-      } else if (typeof songs !== 'undefined' && Array.isArray(songs) && songs.length > 0) {
-        const idx = (typeof currentIndex === 'number' && currentIndex >= 0 && currentIndex < songs.length) ? currentIndex : 0;
-        currentItem = songs[idx];
+    let target = window._activeEditingRef || (typeof currentItem !== 'undefined' ? currentItem : window.currentItem);
+    const targetIdx = (typeof window._activeEditingIndex === 'number' && window._activeEditingIndex >= 0)
+      ? window._activeEditingIndex
+      : (typeof currentIndex === 'number' ? currentIndex : 0);
+    const origId = window._activeEditingOriginalId;
+    const origTitle = window._activeEditingOriginalTitle || '';
+    const curTab = window._activeEditingTab || (typeof sidebarTab !== 'undefined' ? sidebarTab : 'schedule');
+
+    const sched = (typeof schedule !== 'undefined' && Array.isArray(schedule)) ? schedule : (window.schedule || []);
+    const sngs = (typeof songs !== 'undefined' && Array.isArray(songs)) ? songs : (window.songs || []);
+
+    if (!target) {
+      if (curTab === 'schedule' && sched.length > 0) {
+        target = sched[targetIdx] || sched[0];
+      } else if (sngs.length > 0) {
+        target = sngs[targetIdx] || sngs[0];
       }
     }
-    if (!currentItem) return;
 
-    const newTitle = (document.getElementById('edit-item-title')?.value || '').trim();
-    const newContent = document.getElementById('edit-item-content')?.value || '';
-
-    if (newTitle) currentItem.title = newTitle;
-    currentItem.content = newContent;
-    currentItem.text = newContent;
-    currentItem.updatedAt = Date.now();
-    if (typeof normalizeSearchText === 'function') {
-      currentItem.searchableText = normalizeSearchText(`${currentItem.title || ''}\n${newContent}`);
-    }
+    const titleInput = document.getElementById('edit-item-title');
+    const contentInput = document.getElementById('edit-item-content');
+    const newTitle = (titleInput?.value || '').trim() || (target ? target.title : 'Tanpa Judul');
+    const newContent = contentInput?.value || '';
 
     // Parse updated structured slides from newContent
     let updatedSlides = [];
     if (typeof parseIntoSlides === 'function') {
       updatedSlides = parseIntoSlides(newContent);
     }
-    currentItem.slides = updatedSlides.length ? updatedSlides : [{ section: 'Slide 1', text: newContent }];
-    currentItem.slides = currentItem.slides.map((s, idx) => cleanSlideTextAndSection(s.section, s.text, idx));
+    if (!updatedSlides.length) {
+      const cleaned = cleanSlideTextAndSection('Slide 1', newContent, 0);
+      updatedSlides = [{ section: cleaned.section, text: cleaned.text }];
+    } else {
+      updatedSlides = updatedSlides.map((s, idx) => cleanSlideTextAndSection(s.section, s.text, idx));
+    }
 
-    // Update in songs array if present
-    if (typeof songs !== 'undefined' && Array.isArray(songs)) {
-      const idx = songs.findIndex(s => s.id === currentItem.id || (s.title && currentItem.title && s.title.toLowerCase() === currentItem.title.toLowerCase()));
-      if (idx !== -1) {
-        songs[idx].title = currentItem.title;
-        songs[idx].content = newContent;
-        songs[idx].text = newContent;
-        songs[idx].slides = currentItem.slides;
-        songs[idx].updatedAt = Date.now();
-        if (typeof idbPut === 'function' && typeof STORE_SONGS !== 'undefined' && typeof buildSongRecord === 'function') {
-          idbPut(STORE_SONGS, buildSongRecord(songs[idx], { isNew: false })).catch(() => {});
+    if (target) {
+      target.title = newTitle;
+      target.content = newContent;
+      target.text = newContent;
+      target.slides = updatedSlides;
+      target.updatedAt = Date.now();
+      if (typeof normalizeSearchText === 'function') {
+        target.searchableText = normalizeSearchText(`${newTitle}\n${newContent}`);
+      }
+    } else {
+      target = {
+        id: origId || (typeof createId === 'function' ? createId('song', newTitle) : `song_${Date.now()}`),
+        title: newTitle,
+        content: newContent,
+        text: newContent,
+        slides: updatedSlides,
+        updatedAt: Date.now()
+      };
+      if (curTab === 'schedule') {
+        sched.push(target);
+      } else {
+        sngs.push(target);
+      }
+    }
+
+    try {
+      currentItem = target;
+      window.currentItem = target;
+      if (targetIdx >= 0) {
+        currentIndex = targetIdx;
+        window.currentIndex = targetIdx;
+      }
+    } catch (_) {}
+
+    // 1. Update in schedule array
+    if (Array.isArray(sched) && sched.length > 0) {
+      let schIdx = -1;
+      if (curTab === 'schedule' && targetIdx >= 0 && targetIdx < sched.length && (sched[targetIdx] === target || sched[targetIdx].id === origId || sched[targetIdx].title === origTitle)) {
+        schIdx = targetIdx;
+      }
+      if (schIdx === -1 && origId) {
+        schIdx = sched.findIndex(s => s.id === origId);
+      }
+      if (schIdx === -1 && target.id) {
+        schIdx = sched.findIndex(s => s.id === target.id);
+      }
+      if (schIdx === -1 && origTitle) {
+        schIdx = sched.findIndex(s => s.title && s.title.toLowerCase() === origTitle.toLowerCase());
+      }
+      if (schIdx === -1 && newTitle) {
+        schIdx = sched.findIndex(s => s.title && s.title.toLowerCase() === newTitle.toLowerCase());
+      }
+
+      if (schIdx !== -1) {
+        sched[schIdx].title = newTitle;
+        sched[schIdx].content = newContent;
+        sched[schIdx].text = newContent;
+        sched[schIdx].slides = updatedSlides;
+        sched[schIdx].updatedAt = Date.now();
+        if (typeof normalizeSearchText === 'function') {
+          sched[schIdx].searchableText = normalizeSearchText(`${newTitle}\n${newContent}`);
         }
       }
     }
 
-    // Update in schedule array if present
-    if (typeof schedule !== 'undefined' && Array.isArray(schedule)) {
-      const schIdx = schedule.findIndex(s => s.id === currentItem.id || (s.title && currentItem.title && s.title.toLowerCase() === currentItem.title.toLowerCase()));
-      if (schIdx !== -1) {
-        schedule[schIdx].title = currentItem.title;
-        schedule[schIdx].content = newContent;
-        schedule[schIdx].text = newContent;
-        schedule[schIdx].slides = currentItem.slides;
+    // 2. Update in songs array
+    if (Array.isArray(sngs)) {
+      let songIdx = -1;
+      if (origId) {
+        songIdx = sngs.findIndex(s => s.id === origId);
+      }
+      if (songIdx === -1 && target.id) {
+        songIdx = sngs.findIndex(s => s.id === target.id);
+      }
+      if (songIdx === -1 && origTitle) {
+        songIdx = sngs.findIndex(s => s.title && s.title.toLowerCase() === origTitle.toLowerCase());
+      }
+      if (songIdx === -1 && newTitle) {
+        songIdx = sngs.findIndex(s => s.title && s.title.toLowerCase() === newTitle.toLowerCase());
+      }
+
+      if (songIdx !== -1) {
+        sngs[songIdx].title = newTitle;
+        sngs[songIdx].content = newContent;
+        sngs[songIdx].text = newContent;
+        sngs[songIdx].slides = updatedSlides;
+        sngs[songIdx].updatedAt = Date.now();
+        if (typeof normalizeSearchText === 'function') {
+          sngs[songIdx].searchableText = normalizeSearchText(`${newTitle}\n${newContent}`);
+        }
+        if (typeof idbPut === 'function' && typeof STORE_SONGS !== 'undefined' && typeof buildSongRecord === 'function') {
+          idbPut(STORE_SONGS, buildSongRecord(sngs[songIdx], { isNew: false })).catch(() => {});
+        }
+      } else if (target.isSong || target.presentationType === 6) {
+        const songRecord = { ...target };
+        sngs.push(songRecord);
+        if (typeof idbPut === 'function' && typeof STORE_SONGS !== 'undefined' && typeof buildSongRecord === 'function') {
+          idbPut(STORE_SONGS, buildSongRecord(songRecord, { isNew: true })).catch(() => {});
+        }
       }
     }
 
-    // Update lyric-editor textarea if exists
+    // 3. Update lyric-editor textarea if exists
     const lyricEditor = document.getElementById('lyric-editor');
     if (lyricEditor) lyricEditor.value = newContent;
 
+    // 4. Save and re-render views
     if (typeof saveState === 'function') saveState();
     if (typeof saveToStorageDebounced === 'function') saveToStorageDebounced();
     if (typeof renderSongs === 'function') renderSongs();
@@ -772,17 +896,24 @@
     if (typeof updateFocusedEditorBanner === 'function') updateFocusedEditorBanner();
     if (typeof renderFocusedMainPanel === 'function') renderFocusedMainPanel({ forceFullRender: true });
 
-    // Update live projection if this item is currently live on stream
+    // 5. Update live projection if this item is currently live on stream
     if (typeof isLive !== 'undefined' && isLive) {
       if (typeof scheduleLiveUpdate === 'function') scheduleLiveUpdate();
+      else if (typeof projectLive === 'function') projectLive(true);
     }
 
+    // 6. Close textEditModal cleanly
     if (typeof closeModal === 'function') {
       closeModal('textEditModal');
-    } else {
-      const modal = document.getElementById('textEditModal');
-      if (modal) modal.style.display = 'none';
     }
+    const modal = document.getElementById('textEditModal');
+    if (modal) modal.style.display = 'none';
+
+    // Clear editing tracker
+    window._activeEditingRef = null;
+    window._activeEditingIndex = -1;
+    window._activeEditingOriginalId = null;
+    window._activeEditingOriginalTitle = '';
 
     if (typeof showToast === 'function') {
       showToast('✅ Perubahan teks berhasil disimpan!', 'success');
@@ -1184,6 +1315,20 @@
     saveTextEdit,
     insertSectionTag
   };
+
+  // Global keyboard shortcut: Ctrl+E (or Cmd+E) opens Text Edit Modal in any condition
+  if (typeof window !== 'undefined') {
+    window.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key && e.key.toLowerCase() === 'e') {
+        const active = document.activeElement;
+        const isEditingInModal = active && (active.id === 'edit-item-title' || active.id === 'edit-item-content');
+        if (!isEditingInModal) {
+          e.preventDefault();
+          openTextEditModal();
+        }
+      }
+    });
+  }
 
   // Auto-clean liturgy/presentation items from songs library on load so Song menu is clean
   function cleanLiturgyFromSongsLibrary() {

@@ -2440,6 +2440,7 @@
               </div>
               <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">
                 <button type="button" class="btn" onclick="openModal('ewImportModal')" title="Impor Jadwal (.ewsx) atau Database EasyWorship" style="display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 10px;font-size:11px;font-weight:700;background:linear-gradient(135deg,#6C63FF,#4F46E5);color:#fff;border-radius:4px;border:1px solid rgba(255,255,255,0.25);cursor:pointer;white-space:nowrap;box-shadow:0 1px 4px rgba(108,99,255,0.3);"><span>📂</span> <span>Import EasyWorship</span></button>
+                <button class="btn" type="button" onclick="openTextEditModal()" title="Buat Lagu atau Edit Teks" style="display:inline-flex;align-items:center;gap:4px;height:24px;padding:0 8px;font-size:11px;font-weight:700;background:rgba(245,158,11,0.25);border:1px solid rgba(245,158,11,0.6);color:#F59E0B;border-radius:4px;cursor:pointer;white-space:nowrap;"><span>✏️</span> <span>Edit Teks</span></button>
                 <button class="btn" type="button" onclick="openModal('settingsModal')" title="Pengaturan (Settings)" style="display:inline-flex;align-items:center;justify-content:center;height:24px;width:24px;min-width:24px;padding:0;background:#334155;color:#fff;border-radius:4px;border:1px solid rgba(255,255,255,0.2);cursor:pointer;font-size:12px;">⚙</button>
               </div>
             </div>
