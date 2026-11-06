@@ -4,11 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Bible Song Pro - Control Panel</title>
-  <link rel="stylesheet" href="css/panel/00-panel-base.css?v=2.2.7">
+  <link rel="stylesheet" href="css/panel/00-panel-base.css?v=2.2.9">
   <link rel="stylesheet" href="css/panel/20-annotate-tools.css">
   <link rel="stylesheet" href="css/panel/21-ai-helper-toolbar.css">
   <link rel="stylesheet" href="css/panel/30-media-workspace.css">
-  <link rel="stylesheet" href="css/panel/90-obs-isolated-mode.css">
+  <link rel="stylesheet" href="css/panel/90-obs-isolated-mode.css?v=2.2.9">
   <link rel="stylesheet" href="css/panel/91-live-scripture-hud.css">
   <style>
     body[data-sidebar-tab="songs"] #songs-sidebar-actions {
@@ -4412,8 +4412,8 @@
   </div>
 
     <!-- Text Edit Modal -->
-  <div id="textEditModal" class="modal-overlay" style="display:none">
-    <div class="modal-content" style="width:min(720px,94vw);max-height:88vh;padding:18px 20px;display:flex;flex-direction:column;gap:12px;background:var(--bg-panel,#131822);border:1px solid var(--border,rgba(255,255,255,0.15));border-radius:14px;box-shadow:0 16px 50px rgba(0,0,0,0.85);box-sizing:border-box;">
+  <div id="textEditModal" class="modal-overlay" style="display:none;opacity:1!important;visibility:visible!important;z-index:100005!important;">
+    <div class="modal-content" style="width:min(720px,94vw);max-height:88vh;padding:18px 20px;display:flex;flex-direction:column;gap:12px;background:var(--bg-panel,#131822);border:1px solid var(--border,rgba(255,255,255,0.15));border-radius:14px;box-shadow:0 16px 50px rgba(0,0,0,0.85);box-sizing:border-box;opacity:1!important;visibility:visible!important;">
       
       <!-- Modal Header (Always Visible) -->
       <div style="display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border,rgba(255,255,255,0.08));padding-bottom:10px;flex-shrink:0;">
@@ -4470,12 +4470,12 @@
   <script src="lib/sql-wasm.js"></script>
   <script src="lib/sql-wasm-binary.js"></script>
   <script src="data/easyworship_songs_1410.js"></script>
-  <script src="js/panel/easyworship-import.js?v=2.2.7"></script>
+  <script src="js/panel/easyworship-import.js?v=2.2.9"></script>
   <script src="js/panel/state-and-storage.js"></script>
   <script src="js/panel/panel-app-core.js"></script>
   <script src="js/panel/reference-localization-theme.js"></script>
   <script src="js/panel/vmix-and-translation.js"></script>
-  <script src="js/panel/songs-and-bible.js?v=2.2.7"></script>
+  <script src="js/panel/songs-and-bible.js?v=2.2.9"></script>
   <script src="js/panel/render-and-selection.js"></script>
   <script src="js/panel/media-and-background.js"></script>
   <script src="js/panel/output-and-streaming.js"></script>
@@ -4485,7 +4485,7 @@
   <script src="js/panel/source-runtime-and-promixer.js"></script>
   <script src="js/panel/program-display-and-transform.js"></script>
   <script src="js/panel/recording-and-livestream-tools.js"></script>
-  <script src="js/panel/workspace-and-editor-tools.js?v=2.2.7"></script>
+  <script src="js/panel/workspace-and-editor-tools.js?v=2.2.9"></script>
   <script src="js/panel/app-commands-and-shortcuts.js"></script>
   <script src="js/panel/settings-and-controls.js"></script>
   <script src="js/panel/sidebar-and-workspace.js"></script>

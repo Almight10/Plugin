@@ -693,8 +693,9 @@
     let contentVal = target.content || target.text || '';
     if (!contentVal && Array.isArray(target.slides) && target.slides.length > 0) {
       contentVal = target.slides.map((s, sIdx) => {
-        const sec = s.section ? `[${s.section}]` : `[Slide ${sIdx + 1}]`;
-        return `${sec}\n${(s.text || '').trim()}`;
+        const sec = (s && s.section) ? `[${s.section}]` : `[Slide ${sIdx + 1}]`;
+        const txt = s ? (s.text || '') : '';
+        return `${sec}\n${txt.trim()}`;
       }).join('\n\n');
     }
     if (contentInput) contentInput.value = contentVal;
@@ -716,8 +717,15 @@
     const modal = document.getElementById('textEditModal');
     if (modal) {
       modal.style.display = 'flex';
+      modal.style.opacity = '1';
+      modal.style.visibility = 'visible';
       modal.style.zIndex = '100005';
       modal.style.pointerEvents = 'auto';
+      const content = modal.querySelector('.modal-content');
+      if (content) {
+        content.style.opacity = '1';
+        content.style.visibility = 'visible';
+      }
     }
     if (typeof openModal === 'function') {
       try { openModal('textEditModal'); } catch (_) {}

@@ -746,10 +746,22 @@ body.obs-isolated .segmented-picker .seg-btn {
   text-align: center !important;
 }
 
-/* ===== EDIT TEXT MODAL RESPONSIVE ===== */
+/* ===== EDIT TEXT MODAL RESPONSIVE & VISIBILITY ===== */
 #textEditModal.modal-overlay,
-body.obs-isolated #textEditModal.modal-overlay {
-  z-index: 100000 !important;
+body.obs-isolated #textEditModal.modal-overlay,
+.modal-overlay#textEditModal {
+  z-index: 100005 !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  animation: none !important;
+}
+
+#textEditModal .modal-content,
+body.obs-isolated #textEditModal .modal-content {
+  opacity: 1 !important;
+  visibility: visible !important;
+  animation: none !important;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.95), 0 0 0 1px rgba(255, 255, 255, 0.15) !important;
 }
 
 @media (max-width: 650px) {
