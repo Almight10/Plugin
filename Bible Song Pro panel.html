@@ -626,9 +626,6 @@
         <rect x="17.5" y="21" width="6.5" height="2.5" fill="#FFFFFF"/>
       </svg>
       <span class="settings-footer-plugin">Bible Song<span class="settings-footer-pro">PRO</span></span>
-      <button type="button" class="btn" id="topbar-btn-ew-import" onclick="openModal('ewImportModal')" title="Impor Jadwal (.ewsx) atau Database EasyWorship" style="display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 12px;font-size:11px;font-weight:700;background:linear-gradient(135deg,#6C63FF,#4F46E5);color:#fff;border-radius:6px;border:1px solid rgba(255,255,255,0.25);cursor:pointer;white-space:nowrap;box-shadow:0 1px 4px rgba(108,99,255,0.35);margin-left:14px;position:relative;z-index:30;pointer-events:auto;">
-        <span>📂</span> <span>Import EasyWorship</span>
-      </button>
     </div>
     <div style="margin-left:auto;display:flex;align-items:center;gap:8px;"></div>
   </div>
@@ -4218,7 +4215,7 @@
           <h3 style="margin:0;color:#fff;font-size:16px;font-weight:700;">Import EasyWorship (Jadwal & Database)</h3>
           <span style="font-size:12px;color:var(--text-secondary,#8f98a8);">Impor file .ewsx (jadwal) atau Songs.db / SongWords.db langsung ke Bible Song Pro</span>
         </div>
-        <button class="btn" style="margin-left:auto;background:rgba(255,255,255,0.06);border:1px solid var(--border,rgba(255,255,255,0.1));color:#fff;padding:6px 14px;border-radius:8px;cursor:pointer;" onclick="closeModal('ewImportModal')">✕</button>
+        <button type="button" class="btn" style="margin-left:auto;background:rgba(255,255,255,0.06);border:1px solid var(--border,rgba(255,255,255,0.1));color:#fff;padding:6px 14px;border-radius:8px;cursor:pointer;pointer-events:auto !important;" onclick="event.stopPropagation();event.preventDefault();closeModal('ewImportModal')">✕</button>
       </div>
 
       <!-- 1-Click Load Local Profile -->
@@ -4282,7 +4279,7 @@
       <div id="ew-import-status" style="display:none;font-size:12px;padding:10px 14px;border-radius:8px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.08);"></div>
 
       <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:4px;">
-        <button class="btn" style="background:var(--bg-dark,#1a202c);border:1px solid var(--border,rgba(255,255,255,0.1));color:#fff;padding:8px 18px;border-radius:8px;font-size:13px;cursor:pointer;" onclick="closeModal('ewImportModal')">Tutup</button>
+        <button type="button" class="btn" style="background:var(--bg-dark,#1a202c);border:1px solid var(--border,rgba(255,255,255,0.1));color:#fff;padding:8px 18px;border-radius:8px;font-size:13px;cursor:pointer;pointer-events:auto !important;" onclick="event.stopPropagation();event.preventDefault();closeModal('ewImportModal')">Tutup</button>
       </div>
     </div>
   </div>
@@ -4414,7 +4411,7 @@
           <h3 style="margin:0;color:#fff;font-size:17px;font-weight:700;">File Berhasil Diimpor!</h3>
           <span id="ew-success-filename" style="font-size:13px;color:#34d399;font-weight:600;">2_September.ewsx</span>
         </div>
-        <button class="btn" style="margin-left:auto;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#fff;padding:6px 14px;border-radius:8px;cursor:pointer;" onclick="closeModal('ewImportSuccessModal')">✕</button>
+        <button type="button" class="btn" style="margin-left:auto;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#fff;padding:6px 14px;border-radius:8px;cursor:pointer;pointer-events:auto !important;" onclick="event.stopPropagation();event.preventDefault();closeModal('ewImportSuccessModal')">✕</button>
       </div>
 
       <div style="background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.25);border-radius:10px;padding:12px 16px;font-size:13px;color:#e8eef8;line-height:1.5;">
@@ -4433,7 +4430,7 @@
       </div>
 
       <div style="display:flex;justify-content:flex-end;align-items:center;gap:10px;border-top:1px solid rgba(255,255,255,0.08);padding-top:14px;">
-        <button class="btn" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;padding:9px 18px;border-radius:8px;font-size:13px;cursor:pointer;" onclick="closeModal('ewImportSuccessModal')">Tutup</button>
+        <button type="button" class="btn" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;padding:9px 18px;border-radius:8px;font-size:13px;cursor:pointer;pointer-events:auto !important;" onclick="event.stopPropagation();event.preventDefault();closeModal('ewImportSuccessModal')">Tutup</button>
         <button class="btn" type="button" style="background:rgba(245,158,11,0.2);border:1px solid rgba(245,158,11,0.5);color:#F59E0B;padding:9px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;" onclick="closeModal('ewImportSuccessModal');openTextEditModal(0)">
           ✏️ Edit Teks
         </button>
@@ -4458,7 +4455,7 @@
         <button class="btn" type="button" style="background:linear-gradient(135deg, #10B981, #059669);color:#fff;padding:6px 14px;border-radius:6px;font-size:12px;font-weight:700;border:none;cursor:pointer;display:inline-flex;align-items:center;gap:5px;box-shadow:0 2px 8px rgba(16,185,129,0.35);" onclick="saveTextEdit()" title="Simpan Perubahan (Ctrl+S / Ctrl+Enter)">
           <span>💾</span> <span>Simpan</span>
         </button>
-        <button class="btn" style="background:rgba(255,255,255,0.06);border:1px solid var(--border,rgba(255,255,255,0.1));color:#fff;padding:6px 12px;border-radius:8px;cursor:pointer;" onclick="closeModal('textEditModal')" title="Tutup">✕</button>
+        <button type="button" class="btn" style="background:rgba(255,255,255,0.06);border:1px solid var(--border,rgba(255,255,255,0.1));color:#fff;padding:6px 12px;border-radius:8px;cursor:pointer;pointer-events:auto !important;" onclick="event.stopPropagation();event.preventDefault();closeModal('textEditModal')" title="Tutup">✕</button>
       </div>
 
       <!-- Scrollable Modal Body -->
@@ -4489,7 +4486,7 @@
       <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border,rgba(255,255,255,0.08));padding-top:10px;flex-shrink:0;">
         <span style="font-size:11px;color:var(--text-secondary,#8f98a8);">Tips: Tekan <b>Ctrl + S</b> atau <b>Ctrl + Enter</b> untuk simpan cepat.</span>
         <div style="display:flex;gap:10px;">
-          <button class="btn" type="button" style="background:var(--bg-dark,#1a202c);border:1px solid var(--border,rgba(255,255,255,0.15));color:#fff;padding:8px 18px;border-radius:8px;font-size:13px;cursor:pointer;" onclick="closeModal('textEditModal')">Batal</button>
+          <button class="btn" type="button" style="background:var(--bg-dark,#1a202c);border:1px solid var(--border,rgba(255,255,255,0.15));color:#fff;padding:8px 18px;border-radius:8px;font-size:13px;cursor:pointer;pointer-events:auto !important;" onclick="event.stopPropagation();event.preventDefault();closeModal('textEditModal')">Batal</button>
           <button class="btn" type="button" style="background:linear-gradient(135deg, #10B981, #059669);color:#fff;padding:8px 24px;border-radius:8px;font-size:13px;font-weight:700;border:none;cursor:pointer;box-shadow:0 2px 8px rgba(16,185,129,0.4);" onclick="saveTextEdit()">💾 Simpan Perubahan</button>
         </div>
       </div>

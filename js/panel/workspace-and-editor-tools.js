@@ -1735,6 +1735,7 @@
         }
       }
       modal.style.display = 'flex';
+      modal.style.pointerEvents = 'auto';
       if (id === 'autoLyricsModal') {
         requestAnimationFrame(() => {
           positionAutoLyricsModal();
@@ -1742,7 +1743,11 @@
       }
       /* Close when clicking on the overlay backdrop (outside modal content) */
       modal._backdropHandler = modal._backdropHandler || function(e) {
-        if (e.target === modal) closeModal(id);
+        if (e.target === modal) {
+          e.stopPropagation();
+          e.preventDefault();
+          closeModal(id);
+        }
       };
       modal.addEventListener('click', modal._backdropHandler);
       if (id === 'settingsModal') {
@@ -1761,7 +1766,10 @@
       }
     }
     
+    let _lastModalCloseTimestamp = 0;
     function closeModal(id) {
+      _lastModalCloseTimestamp = Date.now();
+      window._lastModalCloseTime = _lastModalCloseTimestamp;
       if (id === 'styleEditorModal') {
         try {
           flushStyleAutosave();
@@ -2616,7 +2624,7 @@
       panel.innerHTML = `
         <div class="focused-main-shell">
           <div class="ew-preview-topbar" style="display:flex;align-items:center;justify-content:space-between;gap:6px;padding:3px 8px;min-height:28px;background:rgba(15,23,42,0.85);border-bottom:1px solid rgba(255,255,255,0.08);flex-shrink:0;flex-wrap:wrap;">
-            <div style="display:flex;align-items:center;gap:6px;min-width:0;flex:1 1 auto;overflow:hidden;cursor:pointer;" onclick="window.openTextEditModal ? window.openTextEditModal(${activeIdx}) : openTextEditModal(${activeIdx})" title="Klik untuk edit teks / lirik item ini">
+            <div style="display:flex;align-items:center;gap:6px;min-width:0;flex:1 1 auto;overflow:hidden;">
               <span style="background:rgba(108,99,255,0.25);color:#a5b4fc;border:1px solid rgba(108,99,255,0.45);font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;white-space:nowrap;">📋 ${activeIdx + 1}/${entries.length}</span>
               <div style="font-size:11.5px;font-weight:700;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${itemTitle}">${itemTitle}</div>
               <span class="ew-topbar-live-status ${isItemLive ? 'live' : 'preview'}">${isItemLive ? `🔴 TAYANG: Slide ${liveLineCursor + 1}` : `👁 PREVIEW: Slide ${curLineCursor + 1}`}</span>

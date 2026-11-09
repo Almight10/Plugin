@@ -922,6 +922,16 @@ body.obs-isolated #textEditModal .modal-content {
   pointer-events: none !important;
 }
 
+.modal-overlay {
+  z-index: 100000 !important;
+}
+
+.modal-overlay button,
+.modal-overlay .btn {
+  cursor: pointer !important;
+  pointer-events: auto !important;
+}
+
 .modal-overlay:not([style*="display: flex"]):not([style*="display:flex"]) {
   display: none !important;
   pointer-events: none !important;

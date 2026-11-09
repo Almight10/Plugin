@@ -606,6 +606,9 @@
 
   // Open the Text Edit Modal for the active item or passed item/index
   function openTextEditModal(targetOrIndex = null) {
+    if (Date.now() - (window._lastModalCloseTime || 0) < 350) {
+      return; // Ignore ghost click / bleed-through from closing another modal
+    }
     if (targetOrIndex && (typeof Event !== 'undefined' && targetOrIndex instanceof Event || targetOrIndex.preventDefault || targetOrIndex.stopPropagation)) {
       targetOrIndex = null;
     }
