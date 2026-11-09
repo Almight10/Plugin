@@ -13742,11 +13742,18 @@
       max-width: 400px;
       backdrop-filter: blur(10px);
       border: 1px solid var(--border);
+      pointer-events: none !important;
     }
     
     .toast.show {
       opacity: 1;
       transform: translateY(0);
+      pointer-events: none !important;
+    }
+
+    .toast:not(.show) {
+      display: none !important;
+      pointer-events: none !important;
     }
     
     .preset-popover {
@@ -13771,8 +13778,14 @@
       box-sizing: border-box;
       overflow: auto;
     }
+
+    .preset-popover:not(.open) {
+      display: none !important;
+      pointer-events: none !important;
+    }
     
     .preset-popover.open {
+      display: block !important;
       opacity: 1;
       pointer-events: auto;
       transform: translateY(0);

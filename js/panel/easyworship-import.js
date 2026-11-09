@@ -700,8 +700,19 @@
     }
     if (contentInput) contentInput.value = contentVal;
 
-    // Ensure any blocking overlays or previous modals are cleanly closed
+    // Ensure any blocking overlays, toasts, or previous modals are cleanly closed
     try {
+      const toastEl = document.getElementById('toast');
+      if (toastEl) {
+        toastEl.classList.remove('show');
+        toastEl.style.display = 'none';
+        toastEl.style.pointerEvents = 'none';
+      }
+      const backdrop = document.getElementById('sidebar-popup-backdrop');
+      if (backdrop) {
+        backdrop.classList.remove('open');
+        backdrop.style.display = 'none';
+      }
       const successModal = document.getElementById('ewImportSuccessModal');
       if (successModal) {
         successModal.style.display = 'none';

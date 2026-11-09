@@ -363,25 +363,55 @@
       width: 100% !important;
       overflow: hidden !important;
       flex-shrink: 0 !important;
+      position: relative !important;
+      z-index: 25 !important;
+      pointer-events: auto !important;
     }
 
     .sidebar-tabs .tab {
       flex: 1 1 0 !important;
       min-width: 0 !important;
-      padding: 6px 1px !important;
-      font-size: 9.5px !important;
+      padding: 6px 2px !important;
+      font-size: 11px !important;
+      font-weight: 700 !important;
       letter-spacing: -0.2px !important;
       text-align: center !important;
       white-space: nowrap !important;
       overflow: hidden !important;
       text-overflow: clip !important;
+      cursor: pointer !important;
+      pointer-events: auto !important;
     }
 
-    /* 5. Sidebar Width */
+    /* 5. Sidebar Width - Responsive with comfortable space for all 4 tabs */
     #sidebar {
-      width: 140px !important;
-      min-width: 100px !important;
-      max-width: 200px !important;
+      width: clamp(160px, 18vw, 240px) !important;
+      min-width: 140px !important;
+      max-width: 280px !important;
+      position: relative !important;
+      z-index: 20 !important;
+      pointer-events: auto !important;
+    }
+
+    /* Safety: Never allow invisible toasts, popovers, or backdrops to block user interactions */
+    #toast, .toast {
+      pointer-events: none !important;
+    }
+    #toast:not(.show), .toast:not(.show) {
+      display: none !important;
+      pointer-events: none !important;
+    }
+    .preset-popover:not(.open) {
+      display: none !important;
+      pointer-events: none !important;
+    }
+    #sidebar-popup-backdrop:not(.open) {
+      display: none !important;
+      pointer-events: none !important;
+    }
+    .modal-overlay:not([style*="display: flex"]):not([style*="display:flex"]) {
+      display: none !important;
+      pointer-events: none !important;
     }
 
     /* 6. Live Controls: Single clean 30px row */
@@ -596,6 +626,9 @@
         <rect x="17.5" y="21" width="6.5" height="2.5" fill="#FFFFFF"/>
       </svg>
       <span class="settings-footer-plugin">Bible Song<span class="settings-footer-pro">PRO</span></span>
+      <button type="button" class="btn" id="topbar-btn-ew-import" onclick="openModal('ewImportModal')" title="Impor Jadwal (.ewsx) atau Database EasyWorship" style="display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 12px;font-size:11px;font-weight:700;background:linear-gradient(135deg,#6C63FF,#4F46E5);color:#fff;border-radius:6px;border:1px solid rgba(255,255,255,0.25);cursor:pointer;white-space:nowrap;box-shadow:0 1px 4px rgba(108,99,255,0.35);margin-left:14px;position:relative;z-index:30;pointer-events:auto;">
+        <span>📂</span> <span>Import EasyWorship</span>
+      </button>
     </div>
     <div style="margin-left:auto;display:flex;align-items:center;gap:8px;"></div>
   </div>

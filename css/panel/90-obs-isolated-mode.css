@@ -898,3 +898,46 @@ body.obs-isolated #textEditModal .modal-content {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.65; }
 }
+
+/* ===== OVERLAY & POINTER EVENTS PROTECTION ===== */
+/* Ensure notifications, backdrops, and popovers never block sidebar tabs, search, or top-left buttons */
+#toast,
+.toast {
+  pointer-events: none !important;
+}
+
+#toast:not(.show),
+.toast:not(.show) {
+  display: none !important;
+  pointer-events: none !important;
+}
+
+.preset-popover:not(.open) {
+  display: none !important;
+  pointer-events: none !important;
+}
+
+#sidebar-popup-backdrop:not(.open) {
+  display: none !important;
+  pointer-events: none !important;
+}
+
+.modal-overlay:not([style*="display: flex"]):not([style*="display:flex"]) {
+  display: none !important;
+  pointer-events: none !important;
+}
+
+#app-topbar,
+#app-topbar *,
+#sidebar,
+.sidebar-tabs,
+.sidebar-tabs .tab,
+.search-container,
+#song-search,
+#song-list,
+#song-list .song-item,
+.ew-preview-topbar,
+.ew-preview-topbar * {
+  pointer-events: auto;
+}
+

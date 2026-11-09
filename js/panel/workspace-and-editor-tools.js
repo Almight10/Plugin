@@ -1772,6 +1772,7 @@
       const modal = document.getElementById(id);
       if (modal) {
         modal.style.display = 'none';
+        modal.style.pointerEvents = 'none';
         if (id === 'newSongModal') {
           resetNewSongLookupState({ keepInputs: false });
         }
@@ -2615,24 +2616,24 @@
       panel.innerHTML = `
         <div class="focused-main-shell">
           <div class="ew-preview-topbar" style="display:flex;align-items:center;justify-content:space-between;gap:6px;padding:3px 8px;min-height:28px;background:rgba(15,23,42,0.85);border-bottom:1px solid rgba(255,255,255,0.08);flex-shrink:0;flex-wrap:wrap;">
-            <div style="display:flex;align-items:center;gap:6px;min-width:0;flex:1 1 auto;overflow:hidden;">
+            <div style="display:flex;align-items:center;gap:6px;min-width:0;flex:1 1 auto;overflow:hidden;cursor:pointer;" onclick="window.openTextEditModal ? window.openTextEditModal(${activeIdx}) : openTextEditModal(${activeIdx})" title="Klik untuk edit teks / lirik item ini">
               <span style="background:rgba(108,99,255,0.25);color:#a5b4fc;border:1px solid rgba(108,99,255,0.45);font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;white-space:nowrap;">📋 ${activeIdx + 1}/${entries.length}</span>
               <div style="font-size:11.5px;font-weight:700;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${itemTitle}">${itemTitle}</div>
               <span class="ew-topbar-live-status ${isItemLive ? 'live' : 'preview'}">${isItemLive ? `🔴 TAYANG: Slide ${liveLineCursor + 1}` : `👁 PREVIEW: Slide ${curLineCursor + 1}`}</span>
             </div>
-            <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;flex-wrap:wrap;">
-              <button class="btn" type="button" onclick="openModal('ewImportModal')" title="Impor Jadwal (.ewsx) atau Database EasyWorship" style="display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 10px;font-size:11px;font-weight:700;background:linear-gradient(135deg, #6C63FF, #4F46E5);color:#fff;border-radius:4px;border:1px solid rgba(255,255,255,0.25);cursor:pointer;box-shadow:0 1px 4px rgba(108,99,255,0.3);white-space:nowrap;">
+            <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;flex-wrap:wrap;position:relative;z-index:30;">
+              <button class="btn" type="button" onclick="openModal('ewImportModal')" title="Impor Jadwal (.ewsx) atau Database EasyWorship" style="display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 10px;font-size:11px;font-weight:700;background:linear-gradient(135deg, #6C63FF, #4F46E5);color:#fff;border-radius:4px;border:1px solid rgba(255,255,255,0.25);cursor:pointer;box-shadow:0 1px 4px rgba(108,99,255,0.3);white-space:nowrap;position:relative;z-index:30;pointer-events:auto;">
                 <span>📂</span> <span>Import EasyWorship</span>
               </button>
-              <div class="workspace-font-size-control" style="display:inline-flex;align-items:center;height:24px;border-radius:4px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);overflow:hidden;" title="Ukuran Font Teks / Lirik">
+              <div class="workspace-font-size-control" style="display:inline-flex;align-items:center;height:24px;border-radius:4px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);overflow:hidden;position:relative;z-index:30;pointer-events:auto;" title="Ukuran Font Teks / Lirik">
                 <button class="workspace-font-size-step" type="button" onclick="stepWorkspaceFontSize(-1)" style="height:24px;line-height:24px;padding:0 5px;background:none;border:none;color:#fff;cursor:pointer;font-size:11px;">-</button>
                 <button class="workspace-font-size-value" id="ew-font-size-val" type="button" onclick="stepWorkspaceFontSize(1)" style="height:24px;line-height:24px;padding:0 4px;background:none;border:none;color:#38bdf8;cursor:pointer;font-size:11px;font-weight:700;min-width:32px;">${Math.round(typeof getWorkspaceFontSizeValue === 'function' ? getWorkspaceFontSizeValue() : 40)}pt</button>
                 <button class="workspace-font-size-step" type="button" onclick="stepWorkspaceFontSize(1)" style="height:24px;line-height:24px;padding:0 5px;background:none;border:none;color:#fff;cursor:pointer;font-size:11px;">+</button>
               </div>
-              <button class="btn" id="btn-preview-topbar-edit" type="button" onclick="window.openTextEditModal ? window.openTextEditModal(${activeIdx}) : openTextEditModal(${activeIdx})" title="Edit Teks / Lirik Lagu yang Sedang Dibuka" style="display:inline-flex;align-items:center;gap:4px;height:24px;padding:0 8px;font-size:11px;font-weight:700;background:rgba(245,158,11,0.25);border:1px solid rgba(245,158,11,0.6);color:#F59E0B;border-radius:4px;cursor:pointer;white-space:nowrap;position:relative;z-index:10;pointer-events:auto;">
+              <button class="btn" id="btn-preview-topbar-edit" type="button" onclick="window.openTextEditModal ? window.openTextEditModal(${activeIdx}) : openTextEditModal(${activeIdx})" title="Edit Teks / Lirik Lagu yang Sedang Dibuka" style="display:inline-flex;align-items:center;gap:4px;height:24px;padding:0 8px;font-size:11px;font-weight:700;background:rgba(245,158,11,0.25);border:1px solid rgba(245,158,11,0.6);color:#F59E0B;border-radius:4px;cursor:pointer;white-space:nowrap;position:relative;z-index:35;pointer-events:auto;">
                 <span>✏️</span> <span>Edit Teks</span>
               </button>
-              <button class="btn" type="button" onclick="openModal('settingsModal')" title="Pengaturan (Settings)" style="display:inline-flex;align-items:center;justify-content:center;height:24px;width:24px;min-width:24px;padding:0;background:#334155;color:#fff;border-radius:4px;border:1px solid rgba(255,255,255,0.2);cursor:pointer;font-size:12px;">⚙</button>
+              <button class="btn" type="button" onclick="openModal('settingsModal')" title="Pengaturan (Settings)" style="display:inline-flex;align-items:center;justify-content:center;height:24px;width:24px;min-width:24px;padding:0;background:#334155;color:#fff;border-radius:4px;border:1px solid rgba(255,255,255,0.2);cursor:pointer;font-size:12px;position:relative;z-index:30;pointer-events:auto;">⚙</button>
             </div>
           </div>
           
